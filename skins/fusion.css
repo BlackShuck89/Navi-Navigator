@@ -1,0 +1,38 @@
+/* Navi Fusion — dark, glossy chrome with teal highlights. */
+:root {
+  --navi-surface: #244056;
+  --navi-surface-high: #365a70;
+  --navi-surface-low: #152b42;
+  --navi-accent: #229a9a;
+  --navi-accent-bright: #8de0dc;
+  --navi-text: #f0f8f8;
+  --navi-stroke: #112537;
+  --navi-tab-radius: 10px;
+  --toolbar-field-focus-background-color: #f4fafb !important;
+  --toolbar-field-focus-color: #193349 !important;
+}
+#TabsToolbar,
+#nav-bar,
+#PersonalToolbar,
+#toolbar-menubar {
+  background: linear-gradient(to bottom, #365a70, #244056 55%, #152b42) !important;
+}
+#navigator-toolbox {
+  box-shadow: inset 0 2px 0 #56b5b5 !important;
+}
+#nav-bar {
+  min-height: 41px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2) !important;
+}
+.tabbrowser-tab[selected] .tab-background {
+  background: linear-gradient(to bottom, #49788a, #244056) !important;
+  box-shadow: inset 0 2px 0 #8de0dc !important;
+}
+#urlbar-background,
+#searchbar {
+  background: #e6f1f3 !important;
+  color: #193349 !important;
+}
+#urlbar {
+  --toolbar-field-color: #193349 !important;
+}

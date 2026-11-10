@@ -1,0 +1,55 @@
+name: Validate Navi foundation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-validation:
+    name: Validate themes and project layout
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run dependency-free validation
+        run: node scripts/validate.mjs
+      - name: Check whitespace
+        run: git diff --check
+
+  windows-preview:
+    name: Windows preview profile smoke test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate isolated profiles for every skin
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'NaviPreviewProfiles'
+          foreach ($skin in @('modern', 'classic', 'fusion')) {
+            & ./scripts/Start-NaviPreview.ps1 -Skin $skin -ProfileRoot $root -NoLaunch
+            $chrome = Join-Path $root "$skin/chrome/userChrome.css"
+            $prefs = Join-Path $root "$skin/user.js"
+            if (-not (Test-Path -LiteralPath $chrome) -or -not (Test-Path -LiteralPath $prefs)) {
+              throw "Profile generation failed for $skin"
+            }
+            if (-not (Select-String -Path $chrome -SimpleMatch "#navigator-toolbox" -Quiet)) {
+              throw "Generated CSS for $skin is missing shared styles"
+            }
+            if (-not (Select-String -Path $prefs -SimpleMatch 'toolkit.legacyUserProfileCustomizations.stylesheets' -Quiet)) {
+              throw "Firefox custom stylesheets not enabled for $skin"
+            }
+          }
+      - name: Upload preview profiles for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: navi-windows-profile-preview
+          path: ${{ runner.temp }}/NaviPreviewProfiles
+          if-no-files-found: error
+          retention-days: 7

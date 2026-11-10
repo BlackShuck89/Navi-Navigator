@@ -1,0 +1,20 @@
+/* Navi Classic — crisp and compact 2001–2003 style. */
+:root {
+  --navi-surface: #d5dadf;
+  --navi-surface-high: #f0f2f4;
+  --navi-surface-low: #a6b1bb;
+  --navi-accent: #276881;
+  --navi-accent-bright: #8bcad5;
+  --navi-text: #203443;
+  --navi-stroke: #8c9ca8;
+  --navi-tab-radius: 3px;
+}
+#nav-bar {
+  min-height: 32px !important;
+}
+#nav-bar toolbarbutton {
+  border-radius: 2px !important;
+}
+.tabbrowser-tab[selected] .tab-background {
+  box-shadow: inset 0 1px 0 #ffffff !important;
+}

@@ -1,0 +1,6 @@
+# Copy to <firefox-source>/.mozconfig or set MOZCONFIG to its absolute path.
+# Mozilla artifact builds reuse compiled upstream Gecko components.
+# They are for rapid browser-chrome development, NOT independent Navi binaries.
+ac_add_options --enable-artifact-build
+ac_add_options --disable-debug
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-navi-artifact

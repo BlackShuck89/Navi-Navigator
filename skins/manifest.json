@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "product": "Navi Navigator",
+  "defaultSkin": "modern",
+  "skins": [
+    {
+      "id": "modern",
+      "name": "Navi Modern",
+      "css": "modern.css",
+      "description": "Netscape 7 structure with restrained Netscape 8 polish",
+      "palette": {
+        "surface": "#D7E1E9",
+        "surfaceHigh": "#EDF4F6",
+        "surfaceLow": "#A9BFCA",
+        "accent": "#168A91",
+        "accentBright": "#73CFD0",
+        "text": "#1A3347"
+      }
+    },
+    {
+      "id": "classic",
+      "name": "Navi Classic",
+      "css": "classic.css",
+      "description": "Compact, conventional early-2000s browser chrome",
+      "palette": {
+        "surface": "#D5DADF",
+        "surfaceHigh": "#F0F2F4",
+        "surfaceLow": "#A6B1BB",
+        "accent": "#276881",
+        "accentBright": "#8BCAD5",
+        "text": "#203443"
+      }
+    },
+    {
+      "id": "fusion",
+      "name": "Navi Fusion",
+      "css": "fusion.css",
+      "description": "Dark teal/navy chrome with glossy surfaces and bright accents",
+      "palette": {
+        "surface": "#244056",
+        "surfaceHigh": "#365A70",
+        "surfaceLow": "#152B42",
+        "accent": "#229A9A",
+        "accentBright": "#8DE0DC",
+        "text": "#F0F8F8"
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+/* Navi Modern — default: Netscape 7 structure meets restrained Fusion polish. */
+:root {
+  --navi-surface: #d7e1e9;
+  --navi-surface-high: #edf4f6;
+  --navi-surface-low: #a9bfca;
+  --navi-accent: #168a91;
+  --navi-accent-bright: #73cfd0;
+  --navi-text: #1a3347;
+  --navi-stroke: #7c97a5;
+  --navi-tab-radius: 8px;
+}
+#navigator-toolbox {
+  box-shadow: inset 0 2px 0 #a8d4d5 !important;
+}
+#nav-bar {
+  min-height: 39px !important;
+}

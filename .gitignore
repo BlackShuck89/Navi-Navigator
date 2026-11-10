@@ -1,0 +1,13 @@
+# Firefox build products and generated local preview files
+obj-*/
+*.pyc
+__pycache__/
+.mozbuild/
+dist/
+build/
+artifacts/
+.navi-preview/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
