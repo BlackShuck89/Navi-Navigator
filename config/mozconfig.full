@@ -1,0 +1,9 @@
+# Navi Navigator's separate Gecko build (Windows x64 target).
+# Use only with MozillaBuild's configured environment.
+# This cannot be built via Firefox artifact mode.
+ac_add_options --with-branding=browser/branding/navi
+ac_add_options --with-app-basename=NaviNavigator
+ac_add_options --disable-debug
+ac_add_options --enable-optimize
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-navi
+mk_add_options AUTOCLOBBER=1

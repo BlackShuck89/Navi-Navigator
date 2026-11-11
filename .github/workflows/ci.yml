@@ -23,6 +23,17 @@ jobs:
       - name: Check whitespace
         run: git diff --check
 
+  gecko-overlay-validation:
+    name: Verify source-level branding and icons
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run offline Mozilla source fixture tests
+        run: python scripts/test_gecko_overlay.py
+
   windows-preview:
     name: Windows preview profile smoke test
     runs-on: windows-latest

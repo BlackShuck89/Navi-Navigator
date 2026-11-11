@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/mozilla-firefox/firefox.git",
+  "revision": "eebfc2395a938361f2ecaf6107f3767c1df8d04e",
+  "snapshotDate": "2026-11-10",
+  "notes": "Pinned development snapshot; never distribute without updating to a supported security release."
+}

@@ -13,8 +13,9 @@
 
 ## 0.1.0-alpha — first independently branded browser
 
-- [ ] Pin a supported Firefox upstream revision and create a reproducible patch set
-- [ ] Implement Navi application identity, icon resources, version strings, profile namespace
+- [x] Record a pinned Firefox upstream revision and create a reproducible experimental source overlay (compile not yet verified)
+- [x] Generate initial Navi branding strings/icons and separate application GUID in upstream source
+- [ ] Verify final executable name, version strings, installation and profile isolation on Windows
 - [ ] Assemble a standalone, Windows x64 Gecko binary from source
 - [ ] Integrate Navi's browser chrome and native menu/toolbar behavior
 - [ ] Functional bookmarks, history, tabs, downloads, password management and extensions

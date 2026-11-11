@@ -2,7 +2,7 @@
 
 ## Current reality
 
-This repository is a development overlay, **not** a forked copy of Firefox. Its preview launcher creates a dedicated Firefox profile with a generated userChrome.css and user.js. It launches an installed, up-to-date Firefox browser with the selected appearance skin. Firefox still retains its own brand, installer, executable name, menus, extension handling, security features and updates.
+This repository is an integration overlay, **not** a complete copy of Firefox source. It includes a Firefox-profile skin preview and an experimental Gecko source-level branding overlay. The preview launcher creates a dedicated Firefox profile with a generated userChrome.css and user.js. It launches an installed, up-to-date Firefox browser with the selected appearance skin. Firefox still retains its own brand, installer, executable name, menus, extension handling, security features and updates.
 
 The overlay is immediately useful for testing toolbar geometry, tab shape, border treatments, gradients and readability without consuming tens of gigabytes of upstream source.
 
@@ -14,6 +14,10 @@ The overlay is immediately useful for testing toolbar geometry, tab shape, borde
 - Browser profile: isolated Navi-specific profile path, preferences, migrator and a separate application identity in a future proper fork.
 - Packaging: rebranded Windows x64 installer and full source/licensing disclosure; do not redistribute Mozilla's Firefox application branding under a renamed executable.
 - Other suite tools: optional independently packaged Mail, Composer, and related services after core browsing is stable.
+
+## Source integration
+
+See [GECKO_BUILD.md](GECKO_BUILD.md). The pinned overlay script adds Navi-branded resources to a Mozilla source checkout, changes an application GUID, and injects the Navi Modern skin into the browser's shared chrome CSS. This stage is source preparation only; build, launcher name, installer behavior, separation from Firefox, and the browser update mechanism remain unverified.
 
 ## Real fork bootstrap on Windows
 
