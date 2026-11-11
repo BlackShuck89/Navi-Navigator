@@ -19,7 +19,7 @@
 <path d="M130 348 L159 377 L172 372 L144 340Z" fill="#6A5ACD"/>
 <path d="M241 340 L212 370 L224 379 L255 351Z" fill="#6A5ACD"/>
 <path d="M194 378 L204 424" stroke="#D6FAF9" stroke-width="3"/>
-<!-- Original Navi Navigator compass badge: not the old Netscape 'N' -->
+<!-- Original Navi Navigator compass badge -->
 <circle cx="274" cy="404" r="25" fill="#0E2D42" stroke="#B6EDEB" stroke-width="4"/>
 <circle cx="274" cy="404" r="18" fill="#168B96"/>
 <path d="M274 384 L278 401 L294 404 L278 408 L274 425 L270 408 L255 404 L270 401Z" fill="#ECFBFA"/>
