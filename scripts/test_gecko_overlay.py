@@ -70,6 +70,13 @@ class OverlayTest(unittest.TestCase):
                          b"\x00\x00\x01\x00")
         self.assertIn("Navi", (branding / "content/about-wordmark.svg").read_text("utf-8"))
 
+        # Running again should regenerate managed branding and replace, not
+        # duplicate, the chrome CSS block.
+        overlay.prepare(self.source, allow_unpinned=True)
+        repeated_css = (self.source / "browser/themes/shared/browser-shared.css").read_text("utf-8")
+        self.assertEqual(repeated_css.count(overlay.START), 1)
+        self.assertEqual(repeated_css.count(overlay.END), 1)
+
     def test_reject_unpinned_revision(self):
         with self.assertRaisesRegex(RuntimeError, "Expected upstream Firefox"):
             overlay.prepare(self.source)

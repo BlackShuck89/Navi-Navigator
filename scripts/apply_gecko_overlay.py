@@ -23,9 +23,17 @@ GUID = "{f6637d24-886a-4f2c-93ea-b2de570c13e8}"
 
 
 def replace_once(text: str, old: str, new: str, name: str) -> str:
-    n = text.count(old)
-    if n != 1:
-        raise RuntimeError(f"{name}: expected exactly one occurrence of {old!r}, found {n}; upstream layout may have changed")
+    old_count = text.count(old)
+    new_count = text.count(new)
+    if old_count == 0 and new_count == 1:
+        # Already patched by an earlier Navi run.
+        return text
+    if old_count != 1 or new_count != 0:
+        raise RuntimeError(
+            f"{name}: expected exactly one unmodified occurrence of {old!r}, "
+            f"found {old_count} originals and {new_count} Navi replacements; "
+            "upstream layout may have changed"
+        )
     return text.replace(old, new, 1)
 
 
