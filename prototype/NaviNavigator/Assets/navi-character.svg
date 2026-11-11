@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" role="img" aria-label="Navi the Navigator, teal-and-navy fox with a compass jacket">
+<defs>
+<linearGradient id="fur" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#55BFC0"/><stop offset=".53" stop-color="#168C99"/><stop offset="1" stop-color="#0C4665"/></linearGradient>
+<linearGradient id="jacket" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#E8F1F5"/><stop offset=".5" stop-color="#B8CDD6"/><stop offset="1" stop-color="#7794A9"/></linearGradient>
+<linearGradient id="dark" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#173B5A"/><stop offset="1" stop-color="#06192E"/></linearGradient>
+<linearGradient id="tail" x1="0" y1="0" x2=".9" y2=".7"><stop stop-color="#04314D"/><stop offset=".55" stop-color="#167D9A"/><stop offset="1" stop-color="#75D2CB"/></linearGradient>
+</defs>
+<!-- Tail with globe pattern -->
+<path d="M122 366 C40 354 -8 435 31 454 C72 472 109 435 146 439 C197 452 204 401 175 365Z" fill="url(#tail)" stroke="#0D273D" stroke-width="7"/>
+<path d="M34 446 C62 434 78 406 108 401 M40 426 C77 418 109 425 151 438 M75 365 C86 400 106 414 137 433 M114 362 C120 395 141 417 162 432" fill="none" stroke="#B6F7F0" stroke-width="3" opacity=".8"/>
+<path d="M32 447 Q63 423 84 438 Q112 456 150 439 Q108 476 56 467 Z" fill="#F1FAFA"/>
+<!-- NAVI's outer jacket -->
+<path d="M90 460 L103 362 Q116 328 150 320 L230 325 Q267 325 287 358 L310 480Z" fill="url(#jacket)" stroke="#172F4C" stroke-width="7"/>
+<path d="M90 460 L100 372 Q110 346 133 342 L150 372 L150 480H92Z" fill="url(#dark)"/>
+<path d="M250 341 Q290 349 297 389 L308 478H260Z" fill="url(#dark)"/>
+<path d="M164 341 L193 402 L230 341 L254 478H141Z" fill="#0D4657" stroke="#244B62" stroke-width="5"/>
+<path d="M123 326 L157 326 L195 374 L176 410 L128 360Z" fill="#EAF7F5" stroke="#1C425B" stroke-width="6"/>
+<path d="M225 325 L263 336 L251 360 L212 405 L197 373Z" fill="#DDECF0" stroke="#1C425B" stroke-width="6"/>
+<path d="M130 348 L159 377 L172 372 L144 340Z" fill="#6A5ACD"/>
+<path d="M241 340 L212 370 L224 379 L255 351Z" fill="#6A5ACD"/>
+<path d="M194 378 L204 424" stroke="#D6FAF9" stroke-width="3"/>
+<!-- Compass badge -->
+<circle cx="274" cy="404" r="25" fill="#0E2D42" stroke="#B6EDEB" stroke-width="4"/>
+<circle cx="274" cy="404" r="18" fill="#168B96"/>
+<path d="M274 384 L278 401 L294 404 L278 408 L274 425 L270 408 L255 404 L270 401Z" fill="#ECFBFA"/>
+<circle cx="274" cy="404" r="4" fill="#0B2D45"/>
+<!-- Neck ruff -->
+<path d="M154 310 Q169 356 196 364 Q232 350 236 312 L219 292 L172 293Z" fill="#EFF7F4" stroke="#10334B" stroke-width="6"/>
+<!-- ears -->
+<path d="M99 170 L105 36 Q119 19 137 36 L178 105Z" fill="url(#dark)" stroke="#081B30" stroke-width="8" stroke-linejoin="round"/>
+<path d="M117 145 L121 65 L156 125Z" fill="#E8F7F4" stroke="#167B84" stroke-width="5"/>
+<path d="M249 96 L305 21 Q322 11 328 34 L329 185Z" fill="url(#dark)" stroke="#081B30" stroke-width="8" stroke-linejoin="round"/>
+<path d="M272 123 L314 61 L312 150Z" fill="#E8F7F4" stroke="#167B84" stroke-width="5"/>
+<!-- head -->
+<path d="M105 138 Q139 84 208 87 Q276 83 314 154 Q337 219 299 284 L269 304 L217 340 Q159 343 115 306 Q75 272 74 219 Q78 173 105 138Z" fill="url(#fur)" stroke="#0D2B43" stroke-width="8"/>
+<!-- tufts -->
+<path d="M115 135 L87 152 L109 168 L69 182 L92 199 L79 228 L116 219 M287 129 L328 159 L304 181 L339 193 L307 216" fill="#0F637E" stroke="#092E49" stroke-width="5" stroke-linejoin="round"/>
+<!-- white cheeks and muzzle -->
+<path d="M113 216 Q89 223 60 237 L94 254 L67 272 L109 282 L98 294 L148 309 Q168 335 211 330 Q275 321 301 279 L327 256 L288 246 Q272 226 257 225 L230 260 Q189 277 157 255Z" fill="#F0F8F5" stroke="#123A50" stroke-width="5"/>
+<!-- fringe -->
+<path d="M120 137 Q149 102 186 104 L179 135 Q210 103 241 116 L228 137 Q267 119 289 135 L263 145 Q232 158 206 160 L205 143 Q166 158 143 151Z" fill="#1F9BA6" stroke="#0B3854" stroke-width="4"/>
+<path d="M230 121 L249 133 L269 122 L258 141 L244 146Z" fill="#EDF9F8"/>
+<!-- eyebrows -->
+<path d="M119 176 Q147 164 169 182 M231 176 Q259 163 277 183" fill="none" stroke="#0B2F4A" stroke-width="8" stroke-linecap="round"/>
+<!-- eyes -->
+<path d="M114 191 Q137 179 162 194 Q159 227 138 228 Q115 223 114 191Z" fill="#F5FFFD" stroke="#0F334A" stroke-width="5"/>
+<ellipse cx="139" cy="207" rx="11" ry="17" fill="#09949A"/><ellipse cx="141" cy="207" rx="5" ry="13" fill="#082339"/>
+<circle cx="137" cy="199" r="5" fill="#fff"/>
+<path d="M228 194 Q249 176 279 191 Q282 223 258 227 Q233 229 228 194Z" fill="#F5FFFD" stroke="#0F334A" stroke-width="5"/>
+<ellipse cx="258" cy="207" rx="11" ry="17" fill="#09949A"/><ellipse cx="260" cy="207" rx="5" ry="13" fill="#082339"/>
+<circle cx="257" cy="199" r="5" fill="#fff"/>
+<!-- nose and smile -->
+<path d="M200 236 Q221 223 247 239 Q236 258 217 255Z" fill="#102337" stroke="#0A1F31" stroke-width="5"/>
+<path d="M222 255 Q209 284 177 285 Q160 284 148 275 M220 257 Q250 283 276 268" fill="none" stroke="#12394C" stroke-width="5" stroke-linecap="round"/>
+<path d="M167 292 Q187 302 204 294" fill="none" stroke="#9BBEC1" stroke-width="2"/>
+<!-- sparkles -->
+<path d="M50 105 L56 121 L71 128 L56 134 L50 150 L44 134 L29 128 L44 121Z M341 90 L344 99 L355 102 L344 105 L341 115 L338 105 L328 102 L338 99Z" fill="#C7F7F4"/>
+</svg>

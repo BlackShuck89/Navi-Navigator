@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>NaviNavigator</AssemblyName>
     <RootNamespace>NaviNavigator</RootNamespace>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <ApplicationTitle>Navi Navigator</ApplicationTitle>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishSingleFile>true</PublishSingleFile>
@@ -16,5 +16,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Skins\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    <None Update="Assets\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
   </ItemGroup>
 </Project>

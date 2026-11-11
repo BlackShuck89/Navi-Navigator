@@ -1,9 +1,17 @@
-First independently runnable Windows test application for Navi Navigator.
+# Navi Navigator 0.0.2 — Interface and skinning technical preview
 
-**Engine disclosure:** This prototype uses Microsoft Edge WebView2 (Chromium), **not Gecko/Firefox**. The separate Gecko-source rebranding effort remains in progress. It is not a release candidate for everyday secure browsing.
+**Rendering backend:** Microsoft Edge WebView2 (Chromium), NOT Gecko/Firefox. The Gecko-source integration remains a separate development effort.
 
-Included: standalone Windows x64 executable, Navi-themed native desktop toolbar and tab strip, three switchable skins (Modern, Classic, Fusion), tabs, navigation, bookmarks, basic downloads, and Navi Portal start page.
+This visual update draws from Netscape 7 and 8:
 
-Extract the entire ZIP and run NaviNavigator.exe. Requires the Microsoft Edge WebView2 Evergreen Runtime, generally present on Windows 11. .NET is packaged with the application. This preview is unsigned and has no updater or installer.
+- Separate navigation, location and optional personal toolbars.
+- Original icon renderer with compass, directional, reload, home and bookmark controls.
+- Custom tab outlines: sloped Modern, compact square Classic, and rounded Fusion.
+- Redesigned gradients, bevels, toolbar sizing, typography, and status bar.
+- Skin packages from versioned `skin.json` files with optional PNG icon/toolbar textures; live switching and reloading.
+- Offline Navi Portal with a new illustration of Navi as a teal fox wearing the compass emblem; no Netscape logos.
+- Existing tabs, browsing, downloads, bookmarks and user profile directory preserved.
 
-Please report layout problems and crashes through GitHub Issues and include Windows version, display scaling and reproduction steps. Do not share private browsing data or credentials.
+This ZIP contains a portable Windows x64 executable. Extract the whole archive and run `NaviNavigator.exe`. Requires the WebView2 Evergreen Runtime; .NET is bundled. Unsigned, without automatic updates, and not recommended for sensitive browsing.
+
+See `prototype/NaviNavigator/SKINNING.md` in the repository for skin-format documentation.

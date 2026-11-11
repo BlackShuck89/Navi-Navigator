@@ -7,6 +7,10 @@ internal sealed record Bookmark(string Title, string Url);
 internal sealed class BrowserSettings
 {
     public string Skin { get; set; } = "modern";
+    // Null means use the selected skin's preferred icon/text mode.
+    public bool? ShowToolbarLabels { get; set; }
+    public bool ShowPersonalBar { get; set; } = true;
+    public bool ShowStatusBar { get; set; } = true;
     public List<Bookmark> Bookmarks { get; set; } = [];
 
     internal static string BaseDirectory => Path.Combine(
