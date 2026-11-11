@@ -1,4 +1,4 @@
-NAVI NAVIGATOR 0.0.2 - WINDOWS TECHNICAL PREVIEW
+NAVI NAVIGATOR 0.0.3 - WINDOWS TECHNICAL PREVIEW
 ================================================
 
 This is a test build for Windows 10/11 x64.
@@ -48,3 +48,11 @@ This update reuses that folder, so existing bookmarks and skin
 preferences from v0.0.1 should be preserved.
 
 Source: https://github.com/BlackShuck89/Navi-Navigator
+
+BRANDING AND APPEARANCE CHANGES IN 0.0.3
+- Navi's teal/white/navy reference-sheet markings reinforced in mascot SVG.
+- Dedicated original compass-and-globe emblem replaces older generic star marks.
+- Portal colors and content now respond to the selected skin.
+- A branded About window includes Navi and the product version.
+- Skin palette tokens have been aligned with Navi's canonical colors.
+- No Netscape logos or wordmarks are included in branded application assets.

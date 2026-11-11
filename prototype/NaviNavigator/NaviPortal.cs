@@ -19,6 +19,11 @@ internal static class NaviPortal
         }
         catch (Exception) { /* retain the compass fallback */ }
 
+        string mark = AssetUri("navi-compass.svg");
+        string logoMarkup = string.IsNullOrEmpty(mark)
+            ? "<span aria-hidden=\"true\">✦</span>"
+            : "<img src=\"" + mark + "\" alt=\"Navi Navigator compass logo\" />";
+
         string portraitMarkup = string.IsNullOrEmpty(portrait)
             ? """<div class="portrait-fallback" aria-label="Navi's compass emblem">✦</div>"""
             : "<img class=\"navi-portrait\" src=\"" + portrait +
@@ -29,6 +34,7 @@ internal static class NaviPortal
         string top = WebUtility.HtmlEncode(skin.Top);
         string bottom = WebUtility.HtmlEncode(skin.Bottom);
         string nav = WebUtility.HtmlEncode(skin.Name);
+        string skinId = WebUtility.HtmlEncode(skin.Id);
 
         return $$"""
 <!doctype html>
@@ -76,7 +82,8 @@ body {
   font:48px Georgia,serif;
   line-height:1;
 }
-.logo span { transform:translateY(-2px); }
+ .logo span { transform:translateY(-2px); }
+.logo img { width:60px; height:60px; display:block; filter:drop-shadow(0 2px 3px #001b2b88); }
 h1 { margin:0; font:italic bold 38px Georgia,serif; letter-spacing:-1.4px; text-shadow:1px 2px 3px #001b2b; }
 .topline p { margin:5px 0 0; color:#abdedf; letter-spacing:3px; font-size:11px; text-transform:uppercase; }
 .frame { display:grid; grid-template-columns:184px minmax(0,1fr); max-width:1420px; margin:0 auto; }
@@ -104,8 +111,8 @@ aside a:hover { background:linear-gradient(var(--accent-soft),#d9f7f6); color:#0
   border:3px solid #e6ffff; outline:1px solid #6a9aa8; border-radius:10px;
   overflow:hidden; box-shadow:0 3px 10px #123c4f44;
 }
-.navi-portrait { display:block; height:245px; max-width:100%; width:auto; object-fit:cover;
-  border-radius:68px; box-shadow:0 0 15px #051f3544;
+.navi-portrait { display:block; height:260px; max-width:100%; width:auto; object-fit:contain;
+  filter:drop-shadow(0 4px 9px #051f3566);
 }
 .portrait-fallback { color:white; font:130px Georgia,serif; text-shadow:0 3px 18px #072638; }
 .caption { margin-top:8px; padding:2px 10px; border-radius:30px; color:#e7ffff;
@@ -125,6 +132,31 @@ aside a:hover { background:linear-gradient(var(--accent-soft),#d9f7f6); color:#0
 .tile-note { display:block; font-size:12px; margin-top:6px; line-height:1.4; }
 .info { margin-top:25px; border-top:1px solid #a4c3cd; padding:15px 3px 0; color:#3c6376; }
 small { color:#5a7383; }
+/* The portal responds to the actual loaded skin, not only its accent color. */
+body[data-skin="classic"] { font-family:Tahoma,Verdana,sans-serif;
+ background:#d9e3ea; }
+body[data-skin="classic"] .topline { background:linear-gradient(#164e64,#306e86); }
+body[data-skin="classic"] aside { background:linear-gradient(#e7edf1,#c3cfd8); }
+body[data-skin="classic"] .welcome,body[data-skin="classic"] .tiles a {
+ border-radius:1px; box-shadow:inset 1px 1px #fff,2px 2px #9cadb8; }
+body[data-skin="classic"] .portrait-card { border-radius:2px; }
+body[data-skin="fusion"] { color:#e6f8f8; background:linear-gradient(135deg,#13283e,#25556a); }
+body[data-skin="fusion"] .topline { background:linear-gradient(#0a162c,#17455d 60%,#006c79); }
+body[data-skin="fusion"] aside { background:linear-gradient(#19374d,#102a43);border-color:#56b0b5; }
+body[data-skin="fusion"] aside h2 { color:#e1ffff; background:linear-gradient(#32687a,#164254);border-color:#177a83; }
+body[data-skin="fusion"] aside a { color:#c5eff2; }
+body[data-skin="fusion"] aside a:hover { background:#21747c; color:white; }
+body[data-skin="fusion"] .welcome { color:#dbf8f8; border-color:#21848b;
+ background:linear-gradient(125deg,#183a50,#2d6780 67%,#153a55); box-shadow:inset 0 1px #8bdbd878,0 3px 12px #020d1c; }
+body[data-skin="fusion"] .hero h2 { color:#ecffff; }
+body[data-skin="fusion"] .hero .slogan { color:#a8f6ed; }
+body[data-skin="fusion"] .portrait-card { background:radial-gradient(circle at 45% 25%,#42a7aa,#102c47); outline-color:#167b87; }
+body[data-skin="fusion"] .tiles a { color:#e7f8f8; border-color:#307d86;
+ background:linear-gradient(#315e72,#173650); }
+body[data-skin="fusion"] .tiles a:hover { background:linear-gradient(#347b84,#236372); }
+body[data-skin="fusion"] .tile-symbol { color:#97eeee; }
+body[data-skin="fusion"] .info,body[data-skin="fusion"] small { color:#a8d9df; }
+body[data-skin="fusion"] .info { border-color:#397d88; }
 @media(max-width:850px) {
   .frame { grid-template-columns:1fr; }
   aside { display:none; }
@@ -139,9 +171,9 @@ small { color:#5a7383; }
 }
 </style>
 </head>
-<body>
+<body data-skin="{{skinId}}">
 <header class="topline">
-  <div class="logo"><span>✦</span></div>
+  <div class="logo">{{logoMarkup}}</div>
   <div><h1>Navi Navigator</h1><p>Charting new frontiers across the web</p></div>
 </header>
 <div class="frame">
@@ -164,7 +196,7 @@ small { color:#5a7383; }
       <div class="hero">
         <h2>Welcome to the Navi Portal</h2>
         <p class="slogan">Home is where the link is.</p>
-        <p>Meet Navi, your guide to a more personal web. Familiar menus,
+        <p>Meet Navi, the turquoise-and-navy fox who charts the open web. Familiar menus,
            expressive buttons, customizable interface skins, and the freedom
            to explore without the browser disappearing into minimalism.</p>
         <div class="wave"></div>
@@ -190,7 +222,7 @@ small { color:#5a7383; }
       </a>
     </section>
     <div class="info">Built for the future. Inspired by the web's adventurous past.<br>
-      <small>Navi Navigator 0.0.2 preview · This page is generated offline by the application.</small>
+      <small>Navi Navigator 0.0.3 preview · This page and its artwork are bundled locally with the browser.</small>
     </div>
   </main>
 </div>
@@ -198,4 +230,69 @@ small { color:#5a7383; }
 </html>
 """;
     }
+    /// <summary>A local About page with original Navi character and emblem art.</summary>
+    internal static string BuildAboutHtml(NaviSkin skin)
+    {
+        string mascot = AssetUri("navi-character.svg");
+        string mark = AssetUri("navi-compass.svg");
+        string mainArt = string.IsNullOrEmpty(mascot)
+            ? "<div class=\"fallback\">✦</div>"
+            : "<img class=\"portrait\" src=\"" + mascot +
+              "\" alt=\"Navi the Navigator, teal fox with white markings and compass jacket\">";
+        string brandArt = string.IsNullOrEmpty(mark)
+            ? "✦" : "<img class=\"mark\" src=\"" + mark + "\" alt=\"Navi Navigator compass emblem\">";
+        string accent = WebUtility.HtmlEncode(skin.Accent);
+        string skinName = WebUtility.HtmlEncode(skin.Name);
+        return $$"""
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About Navi Navigator</title>
+<style>
+* {box-sizing:border-box} body {margin:0;font:13px 'Trebuchet MS',Tahoma,sans-serif;color:#153449;
+background:linear-gradient(160deg,#f7fafc,#c8dfe8)}
+header {display:flex;align-items:center;gap:13px;padding:17px 24px;
+background:linear-gradient(#19364e,#096d7b);border-bottom:4px solid {{accent}};color:white}
+.mark {height:64px;width:64px;filter:drop-shadow(1px 3px 3px #0006)}
+h1{margin:0;font:bold italic 31px Georgia,serif}header p{margin:3px 0;color:#b8ecee;letter-spacing:2px;font-size:10px}
+.frame{display:grid;grid-template-columns:190px 1fr;gap:22px;margin:20px;padding:12px;
+border:1px solid #91b2c2;background:linear-gradient(#fff,#d8e9ef);box-shadow:inset 0 2px #fff,0 3px 7px #0e405222}
+.left{background:linear-gradient(#b9ebea,#3b93a2 85%,#16374f);text-align:center;overflow:hidden;min-height:246px}
+.portrait{width:100%;height:240px;object-fit:contain;filter:drop-shadow(0 3px 4px #001c3a66)}
+.fallback{font:90px Georgia,serif;color:white;padding-top:60px}
+h2{font:italic bold 23px Georgia,serif;margin:8px 0 11px}.body{line-height:1.65}
+strong{color:#086b79} .label{display:inline-block;width:85px;color:#446678}
+footer{text-align:center;color:#547386;font-size:11px;margin-bottom:12px}
+</style></head>
+<body><header>{{brandArt}}<div><h1>Navi Navigator</h1><p>CHARTING NEW FRONTIERS</p></div></header>
+<div class="frame"><div class="left">{{mainArt}}</div>
+<div class="body"><h2>About Navi Navigator</h2>
+<p><strong>Version 0.0.3</strong> — Windows technical preview</p>
+<p><span class="label">Appearance</span>{{skinName}}<br>
+<span class="label">Rendering</span>Microsoft WebView2 (Chromium)<br>
+<span class="label">Platform</span>Windows x64</p>
+<p>Meet Navi, a turquoise fox explorer with white fur markings, navy paws and tail accents,
+and a celestial globe-grid motif. His compass represents navigation and curiosity.</p>
+<p>An independently branded, nostalgic desktop browser prototype inspired by the desktop-web era.
+Firefox/Gecko integration is a separate ongoing development effort.</p>
+<p><strong>Experimental software:</strong> no built-in auto-updates or code signing;
+not recommended for sensitive browsing.</p></div></div>
+<footer>Original Navi Navigator branding · Not affiliated with Netscape, Mozilla or Microsoft.</footer>
+</body></html>
+""";
+    }
+
+    private static string AssetUri(string filename)
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", filename);
+        try
+        {
+            var file = new FileInfo(path);
+            if (file.Exists && file.Length is > 0 and < 1024 * 1024)
+                return "data:image/svg+xml;base64," + Convert.ToBase64String(File.ReadAllBytes(path));
+        }
+        catch (Exception) { /* Fallback if a packaged asset is missing. */ }
+        return "";
+    }
+
 }

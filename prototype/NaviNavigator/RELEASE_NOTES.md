@@ -1,17 +1,14 @@
-# Navi Navigator 0.0.2 — Interface and skinning technical preview
+# Navi Navigator 0.0.3 — Mascot and branding correction
 
-**Rendering backend:** Microsoft Edge WebView2 (Chromium), NOT Gecko/Firefox. The Gecko-source integration remains a separate development effort.
+This update corrects Navi's presentation against the original teal/white/navy character references and removes lingering generic or old-browser brand cues from the portal.
 
-This visual update draws from Netscape 7 and 8:
+- Refined mascot SVG: teal face, white cheeks and forelock, navy ear tips, celestial globe-grid detail and Navi compass jacket.
+- Original compass/globe emblem (not the Netscape N) now appears in the local Navi Portal and branded About window.
+- Portal now follows Modern, Classic and Fusion styling with distinct surfaces, colors and border treatments, rather than sharing exactly the same appearance across skins.
+- Branded About window shows Navi, the skin name, preview version and underlying rendering engine.
+- Skins use the canonical teal/navy/ivory palette; all existing tabs, bookmarks and browser data remain in the same profile folder.
+- CI checks shipped logos and manifests for errors and legacy-brand references.
 
-- Separate navigation, location and optional personal toolbars.
-- Original icon renderer with compass, directional, reload, home and bookmark controls.
-- Custom tab outlines: sloped Modern, compact square Classic, and rounded Fusion.
-- Redesigned gradients, bevels, toolbar sizing, typography, and status bar.
-- Skin packages from versioned `skin.json` files with optional PNG icon/toolbar textures; live switching and reloading.
-- Offline Navi Portal with a new illustration of Navi as a teal fox wearing the compass emblem; no Netscape logos.
-- Existing tabs, browsing, downloads, bookmarks and user profile directory preserved.
+**This is a WebView2 (Chromium) Windows prototype, not the Gecko fork.** It is unsigned and has no secure auto-update mechanism. Use for visual testing, not sensitive browsing.
 
-This ZIP contains a portable Windows x64 executable. Extract the whole archive and run `NaviNavigator.exe`. Requires the WebView2 Evergreen Runtime; .NET is bundled. Unsigned, without automatic updates, and not recommended for sensitive browsing.
-
-See `prototype/NaviNavigator/SKINNING.md` in the repository for skin-format documentation.
+Unzip the Windows x64 release and run `NaviNavigator.exe`; WebView2 Evergreen is required. Test Modern, Classic and Fusion from **View → Skins**.

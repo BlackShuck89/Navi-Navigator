@@ -780,13 +780,63 @@ internal sealed class BrowserForm : Form
         Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"")
         { UseShellExecute = true });
 
-    private void ShowAbout() => MessageBox.Show(
-        "Navi Navigator 0.0.2 — Windows technical preview\n\n" +
-        "Netscape 7/8-inspired desktop interface, original Navi compass branding.\n\n" +
-        "Renderer: Microsoft WebView2 (Chromium), NOT Gecko.\n" +
-        "This is an interim test shell, not a production security-audited browser.\n\n" +
-        "Navi Navigator is not affiliated with Netscape, Mozilla or Microsoft.",
-        "About Navi Navigator", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    private async void ShowAbout()
+    {
+        if (_environment is null)
+        {
+            MessageBox.Show("Navi Navigator is still initializing.", "About Navi Navigator",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var dialog = new Form
+        {
+            Text = "About Navi Navigator",
+            Icon = Icon,
+            StartPosition = FormStartPosition.CenterParent,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            ShowInTaskbar = false,
+            MaximizeBox = false,
+            MinimizeBox = false,
+            ClientSize = new Size(730, 510),
+            BackColor = _skin.TopColor
+        };
+        var aboutBrowser = new WebView2 { Dock = DockStyle.Fill };
+        dialog.Controls.Add(aboutBrowser);
+        dialog.Show(this);
+
+        try
+        {
+            await aboutBrowser.EnsureCoreWebView2Async(_environment);
+            if (dialog.IsDisposed || aboutBrowser.IsDisposed)
+                return;
+            aboutBrowser.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+            aboutBrowser.CoreWebView2.Settings.AreDevToolsEnabled = false;
+            aboutBrowser.CoreWebView2.Settings.IsStatusBarEnabled = false;
+            aboutBrowser.CoreWebView2.NewWindowRequested += (_, e) => e.Handled = true;
+            aboutBrowser.CoreWebView2.NavigationStarting += (_, e) =>
+            {
+                // Only the locally generated HTML document is permitted in About.
+                if (e.Uri != "about:blank") e.Cancel = true;
+            };
+            aboutBrowser.CoreWebView2.NavigateToString(NaviPortal.BuildAboutHtml(_skin));
+        }
+        catch (Exception ex)
+        {
+            if (!dialog.IsDisposed)
+            {
+                aboutBrowser.Dispose();
+                dialog.Controls.Clear();
+                dialog.Controls.Add(new Label
+                {
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Text = "Navi Navigator 0.0.3 — Technical Preview\n\n" +
+                           "About page could not be displayed:\n" + ex.Message
+                });
+            }
+        }
+    }
 
     private void OnBrowserKeyDown(object? sender, KeyEventArgs e)
     {

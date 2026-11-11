@@ -65,3 +65,7 @@ The three themes change window chrome. They do **not** style web pages themselve
 The page at `navi://home` is application-generated and has its own branding. It is re-rendered when skins switch. The offline portal includes an original stylized character illustration and Navi's compass; it contains no legacy Netscape marks. When artwork is unavailable, the portal displays a compass fallback.
 
 If you discover a theme that renders unreadable text or clips controls at a given DPI, report Windows version, scale percentage, selected skin, and a screenshot in the repository's GitHub Issues.
+
+## 0.0.3 branding consistency
+
+The three built-in palettes now use Navi's teal/navy colors (not Netscape trademarks). The portal uses its own offline Navi compass SVG and responds to the selected appearance package. A new branded About dialog shows Navi and the product version. Custom skin packages retain the exact same schema; no migration is necessary.

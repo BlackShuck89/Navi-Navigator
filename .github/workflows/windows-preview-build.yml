@@ -53,9 +53,21 @@ jobs:
               throw "Invalid skin manifest: $skin"
             }
           }
-          if (!(Test-Path artifacts/publish/Assets/navi-character.svg)) {
-            throw "Missing Navi portal character artwork"
+          $assets = @('navi-character.svg', 'navi-compass.svg')
+          foreach ($asset in $assets) {
+            $path = "artifacts/publish/Assets/$asset"
+            if (!(Test-Path $path)) { throw "Missing Navi branding asset: $asset" }
+            [xml]$svg = Get-Content -LiteralPath $path -Raw
+            if ($svg.DocumentElement.LocalName -ne 'svg') { throw "Invalid SVG: $asset" }
+            if ($svg.OuterXml -match '(?i)Netscape|Mozilla|Firefox') {
+              throw "Found legacy logo/brand label in $asset"
+            }
           }
+          $portal = Get-Content -LiteralPath prototype/NaviNavigator/NaviPortal.cs -Raw
+          if ($portal -notmatch 'BuildAboutHtml' -or $portal -notmatch 'navi-compass.svg') {
+            throw 'Missing branded About page or portal emblem integration'
+          }
+          Write-Host 'Navi mascot, compass, skin manifests, and About markup validated.'
 
       - name: Package portable test build
         shell: pwsh
@@ -63,17 +75,17 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item prototype/NaviNavigator/README.md artifacts/publish/README-FIRST.txt
           Compress-Archive -Path artifacts/publish/* `
-            -DestinationPath dist/NaviNavigator-0.0.2-Windows-x64-TechnicalPreview.zip `
+            -DestinationPath dist/NaviNavigator-0.0.3-Windows-x64-TechnicalPreview.zip `
             -CompressionLevel Optimal
-          if (!(Test-Path dist/NaviNavigator-0.0.2-Windows-x64-TechnicalPreview.zip)) {
+          if (!(Test-Path dist/NaviNavigator-0.0.3-Windows-x64-TechnicalPreview.zip)) {
             throw 'Failed to create zip'
           }
 
       - name: Upload downloadable build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NaviNavigator-0.0.2-Windows-x64-TechnicalPreview
-          path: dist/NaviNavigator-0.0.2-Windows-x64-TechnicalPreview.zip
+          name: NaviNavigator-0.0.3-Windows-x64-TechnicalPreview
+          path: dist/NaviNavigator-0.0.3-Windows-x64-TechnicalPreview.zip
           if-no-files-found: error
           retention-days: 30
 
@@ -83,8 +95,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $tag = "v0.0.2-preview.1"
-          $zip = "dist/NaviNavigator-0.0.2-Windows-x64-TechnicalPreview.zip"
+          $tag = "v0.0.3-preview.1"
+          $zip = "dist/NaviNavigator-0.0.3-Windows-x64-TechnicalPreview.zip"
           gh release view $tag --repo $env:GITHUB_REPOSITORY 2>$null
           if ($LASTEXITCODE -eq 0) {
             gh release upload $tag $zip --clobber --repo $env:GITHUB_REPOSITORY
@@ -92,7 +104,7 @@ jobs:
             gh release create $tag $zip `
               --repo $env:GITHUB_REPOSITORY `
               --target $env:GITHUB_SHA `
-              --title "Navi Navigator 0.0.2 — Windows technical preview" `
+              --title "Navi Navigator 0.0.3 — Windows technical preview" `
               --notes-file prototype/NaviNavigator/RELEASE_NOTES.md `
               --prerelease
           }

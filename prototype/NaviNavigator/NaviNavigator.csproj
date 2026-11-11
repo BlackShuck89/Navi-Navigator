@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>NaviNavigator</AssemblyName>
     <RootNamespace>NaviNavigator</RootNamespace>
-    <Version>0.0.2</Version>
+    <Version>0.0.3</Version>
     <ApplicationTitle>Navi Navigator</ApplicationTitle>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishSingleFile>true</PublishSingleFile>
