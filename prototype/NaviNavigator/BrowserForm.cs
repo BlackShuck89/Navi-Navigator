@@ -665,11 +665,11 @@ internal sealed class BrowserForm : Form
             button.DisplayStyle = key == "compass" ?
                 ToolStripItemDisplayStyle.ImageAndText :
                 (labels ? ToolStripItemDisplayStyle.ImageAndText : ToolStripItemDisplayStyle.Image);
-            button.TextImageRelation = ToolStripTextImageRelation.ImageAboveText;
+            button.TextImageRelation = TextImageRelation.ImageAboveText;
             button.ForeColor = skin.ForegroundColor;
             button.Margin = new Padding(2, 0, 2, 0);
         }
-        _brand.TextImageRelation = ToolStripTextImageRelation.ImageBeforeText;
+        _brand.TextImageRelation = TextImageRelation.ImageBeforeText;
         _brand.ToolTipText = "Navi Navigator";
         _address.BackColor = Color.FromArgb(246, 251, 251);
         _address.ForeColor = Color.FromArgb(24, 47, 61);
