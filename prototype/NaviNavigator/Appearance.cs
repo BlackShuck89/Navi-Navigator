@@ -90,8 +90,8 @@ internal static class NaviArt
             g.FillEllipse(dark, 1, 1, 62, 62);
             g.FillEllipse(pearl, 6, 6, 52, 52);
             g.FillEllipse(teal, 9, 9, 46, 46);
-            g.FillPolygon(pearl, [new Point(32, 9), new Point(38, 32), new Point(32, 55), new Point(26, 32)]);
-            g.FillPolygon(violet, [new Point(9, 32), new Point(32, 26), new Point(55, 32), new Point(32, 38)]);
+            g.FillPolygon(pearl, new Point[] { new(32, 9), new(38, 32), new(32, 55), new(26, 32) });
+            g.FillPolygon(violet, new Point[] { new(9, 32), new(32, 26), new(55, 32), new(32, 38) });
             g.FillEllipse(dark, 28, 28, 8, 8);
         }
         var handle = bitmap.GetHicon();

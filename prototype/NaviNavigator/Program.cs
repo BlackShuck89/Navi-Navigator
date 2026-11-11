@@ -8,7 +8,6 @@ internal static class Program
     private static void Main()
     {
         ApplicationConfiguration.Initialize();
-        Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.Run(new BrowserForm());
     }
 }

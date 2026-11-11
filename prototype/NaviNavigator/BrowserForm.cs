@@ -81,11 +81,6 @@ internal sealed class BrowserForm : Form
         var edit = new ToolStripMenuItem("&Edit");
         edit.DropDownItems.Add(new ToolStripMenuItem("Copy Page &Address", null,
             (_, _) => CopyAddress()));
-        edit.DropDownItems.Add(new ToolStripMenuItem("&Find in Page", null,
-            (_, _) => CurrentView?.CoreWebView2?.OpenDefaultDownloadDialog(), Keys.None));
-        // Find is enabled below via the WebView2 find shortcut (Ctrl+F) in page content.
-        edit.DropDownItems.RemoveAt(edit.DropDownItems.Count - 1);
-
         var view = new ToolStripMenuItem("&View");
         view.DropDownItems.Add(new ToolStripMenuItem("&Reload", null,
             (_, _) => ReloadPage(), Keys.F5));
