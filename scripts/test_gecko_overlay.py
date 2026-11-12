@@ -34,6 +34,8 @@ class OverlayTest(unittest.TestCase):
         put("browser/themes/shared/browser-shared.css", ":root { color: red; }\n")
         base = "browser/branding/unofficial/"
         put(base + "configure.sh", "MOZ_APP_DISPLAYNAME=Nightly\n")
+        put(base + "moz.build", "DIRS += ['content', 'locales']\n")
+        put(base + "content/jar.mn", "browser.jar:\n  content/branding/about-logo.svg\n")
         put(base + "branding.nsi",
             '!define BrandFullNameInternal "Mozilla Developer Preview"\n'
             '!define CompanyName           "mozilla.org"\n'
