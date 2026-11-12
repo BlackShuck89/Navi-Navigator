@@ -1,55 +1,69 @@
-# Gecko source integration — next development milestone
+# Gecko-first development and native Windows build
 
-This is the first actual *source-level* Navi integration. The original preview merely loads CSS into an installed Firefox. The source overlay can prepare a pinned upstream Firefox checkout with Navi-specific branding, application identity settings, icon resources and the Navi Modern chrome style.
+Navi Navigator's primary target is a **separately branded Firefox / Gecko application**, not a .NET or WebView2 shell.
 
-**It has not been compiled into a working Navi browser yet.** Build success, Windows executable identity, installer registration, first-run behavior, updater behavior and separation from a normal Firefox installation require verification.
+## Status
 
-## Pinned upstream
+The repo now contains a real source-integration layer that modifies a pinned Firefox checkout. It has deterministic branding, application identity, generated icons and early CSS. CI includes a **real-upstream layout test**, downloading actual Mozilla files from the pinned revision and running the patch generator. A green result proves the source overlay matches those files, **not that Firefox has compiled or launched**.
 
-The first integration targets Mozilla's official Git repository at the exact revision recorded in config/upstream.json. This is a reproducibility mechanism, **not** an endorsement of this revision for a public release. Any public browser must track Mozilla security updates and receive its own security-maintenance process.
+No Gecko-based Navi binary exists until the full Windows build has succeeded and the result has been inspected. An installed Firefox and a skin preview are not a substitute.
 
-The source overlay is intentionally stored as code in Navi's own small repository; we do not copy Firefox's giant source tree into Navi Navigator.
+## Native build requirements
 
-## Windows development build
+Mozilla documents [Windows build prerequisites](https://firefox-source-docs.mozilla.org/setup/windows_build.html) including MozillaBuild, a supported Visual Studio C++ environment, at least **40 GB free disk**, and 8 GB+ RAM recommended. Build on Windows 10/11 x64, ideally with 64 GB+ free. Standard GitHub-hosted Windows agents are not assumed large enough for the full Gecko build.
 
-1. Set up [MozillaBuild and Firefox development dependencies](https://firefox-source-docs.mozilla.org/setup/windows_build.html). Mozilla recommends 40 GB+ free space and 8 GB+ RAM.
-2. Within the MozillaBuild shell, bootstrap/clone the Firefox source following the official guide.
-3. Navigate to that Firefox source directory and `git checkout` the exact revision in `config/upstream.json`. Do this only in a disposable source checkout, not a checkout containing unrelated work.
-4. In the MozillaBuild shell, invoke the Navi script by pointing it at the Firefox checkout:
+From **MozillaBuild's shell**, follow Mozilla's instructions to bootstrap the real [mozilla-firefox/firefox](https://github.com/mozilla-firefox/firefox) repository. Keep Navi's repository in a separate directory.
 
-   ```bash
-   bash /c/path/to/Navi-Navigator/scripts/Build-NaviGecko.sh /c/mozilla-source/firefox
-   ```
-
-The build script refuses to overwrite an existing mozconfig, prepares the new branding, writes its own mozconfig and runs `./mach build` followed by `./mach package`.
-
-If you want to inspect changes before compiling:
+Use a dedicated Firefox checkout with **no existing mozconfig** and check out the **exact** upstream revision declared in `config/upstream.json`:
 
 ```bash
-python3 /c/path/to/Navi-Navigator/scripts/apply_gecko_overlay.py --firefox-source /c/mozilla-source/firefox
-git -C /c/mozilla-source/firefox diff --stat
+cd /c/mozilla-source/firefox
+git fetch origin
+git checkout eebfc2395a938361f2ecaf6107f3767c1df8d04e
 ```
 
-For a build from a newer Firefox revision, the overlay provides `--allow-unpinned` for *experimentation only*. That override does not establish compatibility.
+Then call the Navi build script from within the same MozillaBuild shell (edit paths to your actual directories):
 
-## What the source overlay changes
+```bash
+bash /c/Navi-Navigator/scripts/Build-NaviGecko.sh /c/mozilla-source/firefox
+```
 
-- Creates `browser/branding/navi` by copying Firefox's standard **unofficial** branding sources (MPL 2.0), then replaces the primary brand strings, Windows icon files, product logos, and first-pass installer labels.
-- Assigns a Navi-specific application vendor and GUID in `browser/moz.configure`.
-- Applies the Navi Modern skin at the end of `browser/themes/shared/browser-shared.css`, integrating it into compiled Gecko browser chrome rather than requiring userChrome.css.
-- Adds branding preferences indicating that the experimental build **does not have its own secure update service**.
-- Uses `--with-branding=browser/branding/navi` and `--with-app-basename=NaviNavigator` in `config/mozconfig.full`.
+The script uses `MOZCONFIG` to point at `config/mozconfig.full`; it does **not** replace a local `.mozconfig` or `mozconfig` file. It patches the Firefox checkout, then invokes:
 
-This is a first-pass rebrand. Some Firefox-internal file names and ancillary resources still need to be customized or audited. The executable's exact generated name is not asserted until a full build is complete.
+```bash
+./mach build
+./mach package
+```
 
-## Testing and limits
+Output should appear under `obj-navi-gecko/dist`. Check for a distinct executable, product branding, `application.ini`, and a Windows installer. This has to be **verified from the actual artifacts**, not inferred from a passing source-level test.
 
-`python3 scripts/test_gecko_overlay.py` creates an isolated fake Mozilla source tree and verifies manifest substitutions, icons and the stylesheet patch. These tests do not compile Gecko. Existing GitHub Actions tests also check preview skin syntax and Windows profile generation.
+Run using a **dedicated test profile**, never your existing Firefox profile. Carefully inspect `./mach run --help` on the compiled checkout before supplying profile flags.
 
-The current overlay does not produce release-ready binaries and does not provide code signing, reliable automated security updates, complete Firefox trademark removal, a safe skin package manager, or production user-data migration. Do **not** use a locally built preview as a daily browser for sensitive activity.
+## Source changes applied
 
-The original Navi mascot artwork has not been committed to the source tree; the project uses a generated original compass placeholder.
+- The officially supplied **unofficial branding folder** is copied to `browser/branding/navi` and its source MPL obligations retained.
+- Navi product and vendor identifiers, installer display labels, local brand Fluent strings, links, wordmark and Windows .ICO / .PNG assets replace developer-preview defaults.
+- The build option `--with-app-basename=NaviNavigator` sets a distinct application name used in the profile/system identity; `--with-app-name=navinavigator` sets the executable name; `MOZ_APP_ID` is changed to a Navi-specific GUID. Those values must still be tested on Windows before guaranteeing zero collision.
+- Navi Modern's initial CSS is applied to the Gecko browser chrome; Classic/Fusion switching from WebView2 is **not** magically carried across.
+- The experimental updater preferences are disabled because **no Navi security update service exists**. This is a serious constraint: do not distribute a browser that users might mistakenly rely on for security patches.
 
-## Later automated builds
+The integration is *not* a source fork with every Firefox literal renamed. Some identifiers and file names inherited from Gecko remain internally (per the original licenses), and product-branded UI needs auditing.
 
-A full Windows GitHub Actions build requires appropriately provisioned Windows build machines, MozillaBuild, large storage, toolchains, caches and Windows installer validation. We intentionally do not claim that the existing GitHub-hosted preview jobs build Gecko. When reliable machines are available, the pinned overlay and full mozconfig are ready to be consumed by that build workflow.
+## CI validation
+
+```bash
+python3 scripts/test_gecko_overlay.py
+python3 scripts/test_gecko_upstream_snapshot.py
+```
+
+The second test downloads genuine Mozilla branding files and related configure/style sources from the pinned revision, builds a disposable sparse tree and checks that Navi's overlay creates coherent branding and still resolves the jar manifest's assets. It needs internet access to GitHub and **does not** compile Gecko. The mock fixture tests remain for fast regression checks.
+
+## Full-source GitHub Actions
+
+`.github/workflows/gecko-windows-full.yml` defines a manual compilation workflow for a **self-hosted** Windows runner with labels `self-hosted`, `windows`, `x64`, and `navi-gecko`. It requires MozillaBuild at `C:\mozilla-build` and `NAVI_FIREFOX_SOURCE` pointed at a bootstrap-complete checkout. A runner must be provisioned, available and appropriately trusted before this can start. It is not a scheduled build.
+
+Release engineering comes after compilation: icons, code signing, license bundle, integrated Navi start page, profile isolation, normal updater behavior, trustworthy update distribution, crash telemetry controls, and visual testing at multiple DPI levels.
+
+## Upstream maintenance
+
+The commit in `config/upstream.json` is a **development snapshot**, not a long-term supported security release. Before a public Navi release, pin an actively maintained upstream release, rerun the real-upstream integration tests, audit API changes, and keep Gecko fixes arriving promptly.

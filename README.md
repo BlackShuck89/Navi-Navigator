@@ -1,69 +1,52 @@
 # Navi Navigator
 
-> A Gecko-based browser project inspired by the transition from Netscape 7 to Netscape 8, with its own Navi the Navigator identity.
+**Navi Navigator is being developed as a real Mozilla Firefox / Gecko-based browser.** It takes visual cues from the Netscape 7–8 transition while using an original Navi fox-and-compass identity. The long-term browser will be a separately branded native Firefox fork with modern web compatibility, traditional desktop controls and full skinning.
 
-**Status:** pre-alpha / development preview. There is **not yet a standalone Navi Navigator executable**. The first runnable preview applies Navi's interface skins to a separate Firefox profile, so browsing is handled by a current, locally installed Firefox. This is a stepping stone toward a fully rebranded Firefox source build, not a finished fork.
+## Current status (November 2026)
 
-## Design direction
+**Gecko track — now the primary development path:** A pinned upstream Firefox revision, source-level rebranding script, independent application name/basename/GUID, generated original icons, Navi Modern browser-chrome CSS and a full native Windows build configuration. Continuous integration tests the overlay against *actual downloaded Mozilla source files*. The full Gecko executable is **not yet compiled or verified**. The first native Gecko release will be `0.1.0-alpha`.
 
-- **Navi Modern** — default: Netscape 7's functional layout with restrained Netscape 8 Fusion polish.
-- **Navi Classic** — compact, brighter, conventional 2000s-style browser chrome.
-- **Navi Fusion** — darker teal/navy gradients, stronger highlights and rounded tabs.
-- Traditional menu bar, visible bookmarks toolbar, status feedback and configurable chrome are long-term priorities.
-- Skin appearance and toolbar layout are separate features. The preview currently changes appearance, not toolbar placement.
-- Gecko provides modern standards compatibility and Firefox's ongoing security foundation.
+**WebView2 track — legacy UI prototype:** Versions 0.0.1–0.0.5 demonstrated browsing, tab management, history, skinning and Navi Portal concepts as a separate Windows executable. These remain under `prototype/NaviNavigator/` but are **not the engine foundation going forward**. The current Gecko track neither embeds WebView2 nor depends on .NET.
 
-The name and visual design are original to Navi Navigator; no Netscape or Mozilla logos are included. Navi is the project's teal-and-navy fox mascot, with compass and celestial motifs.
+## Gecko source integration
 
-## Try the development skin preview (Windows)
+1. Set up a Windows 10/11 x64 Firefox developer environment using Mozilla's [official Windows build guide](https://firefox-source-docs.mozilla.org/setup/windows_build.html) — MozillaBuild, Visual Studio tooling, and 40 GB+ free disk.
+2. Clone/bootstrap the official [Firefox source](https://github.com/mozilla-firefox/firefox) and check out the exact development revision in `config/upstream.json`.
+3. In the MozillaBuild shell, run:
 
-Requires an **installed Firefox** and Windows PowerShell 5.1 or PowerShell 7.
+   ```bash
+   bash /c/your/Navi-Navigator/scripts/Build-NaviGecko.sh /c/mozilla-source/firefox
+   ```
 
-```powershell
-git clone https://github.com/BlackShuck89/Navi-Navigator.git
-cd Navi-Navigator
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Start-NaviPreview.ps1 -Skin modern
-```
+The script checks for conflicting mozconfig files, generates Navi branding inside the Firefox source checkout, and runs `./mach build` and `./mach package`. **Use a disposable Firefox source checkout**: the integration modifies it in place. `./mach run` can be used for local smoke testing with a dedicated profile.
 
-Choose `-Skin classic` or `-Skin fusion` to try the alternatives. Use `-NoLaunch` to generate and inspect a profile without opening Firefox. Use `-FirefoxPath "C:\\Program Files\\Mozilla Firefox\\firefox.exe"` for a nonstandard installation. Profiles are created in `%LOCALAPPDATA%\Navi Navigator\PreviewProfiles\` (or specify `-ProfileRoot`). Your existing Firefox profile is **not** modified.
+For the exact prerequisites, commands, source modifications, and build caveats, see **[docs/GECKO_BUILD.md](docs/GECKO_BUILD.md)**.
 
-This preview deliberately uses Firefox's supported profile launch options and its optional `userChrome.css` customization mechanism. CSS selectors are internal Firefox implementation details and may break on upstream changes; our validation workflow checks file structure, not rendering compatibility. The preview is not rebranded and must not be distributed as a standalone Navi binary.
+The GitHub Actions **Gecko source integration** workflow validates the patch against real upstream source data without pretending it compiled Gecko. A separate manual **Gecko Windows x64 full build** workflow is configured for a specially prepared self-hosted runner with the `navi-gecko` label; it will not run on ordinary GitHub-hosted Windows instances.
+
+## Visual direction
+
+- **Navi Modern:** Practical Netscape 7 architecture with restrained Netscape 8 polish; default for initial Gecko integration.
+- **Navi Classic:** Compact traditional silver-blue desktop controls.
+- **Navi Fusion:** Rich dark teal/navy colors, rounded tabs, glossy highlights.
+- Consistent Navi mascot, compass and globe motifs. All visible Netscape logos/wordmarks are excluded from our generated branding.
+- Complete Gecko skin switching, custom chrome buttons, Navi Portal and optional Communicator-style features are **future work**; the WebView2 versions are only references, not merged functionality.
 
 ## Source layout
 
-| Path | Purpose |
-|---|---|
-| `skins/base.css` | Shared browser-chrome treatment |
-| `skins/{modern,classic,fusion}.css` | Three original Navi skins |
-| `skins/manifest.json` | Skin registry and color palettes |
-| `scripts/Start-NaviPreview.ps1` | Isolated Firefox profile and launcher |
-| `scripts/validate.mjs` | Dependency-free structural validation |
-| `config/mozconfig.artifact` | Developer artifact-build configuration |
-| `docs/` | Architecture, skin contracts, roadmap |
-| `.github/workflows/` | Source validation and Windows profile smoke test |
+| Location | Purpose |
+| --- | --- |
+| `scripts/apply_gecko_overlay.py` | Prepare pinned Firefox source, branding, icons, and browser chrome |
+| `scripts/test_gecko_overlay.py` | Fast isolated regression tests |
+| `scripts/test_gecko_upstream_snapshot.py` | Test against actual Mozilla files at pinned revision |
+| `scripts/Build-NaviGecko.sh` | Full Windows Gecko build orchestration inside MozillaBuild |
+| `config/upstream.json` | Exact upstream Firefox revision for reproducible development |
+| `config/mozconfig.full` | Separate Navi app name and Gecko build configuration |
+| `skins/` | Early Gecko chrome visual resources |
+| `prototype/NaviNavigator/` | Historical WebView2 UI prototype; not part of Gecko build |
 
-## Gecko source-level integration (experimental)
+## Development and security
 
-The next stage is now tracked in `scripts/apply_gecko_overlay.py`: it creates a Navi branding folder in a **pinned** Firefox checkout, generates compass icons, assigns a separate application identity, and integrates Navi Modern into the compiled browser-chrome source. `scripts/Build-NaviGecko.sh` invokes a full upstream `mach build` / `mach package` on a machine already configured with MozillaBuild. This has **not been compiled or visually QA'd** yet.
+Navi's source patches deliberately **do not** turn off site isolation, HTTPS validation or other Firefox security boundaries. Experimental builds currently lack secure Navi code-signing, an update service, update-channel infrastructure, independent installer/profile testing, and formal QA; **do not use an unsigned test build as your primary browser for sensitive activity**.
 
-Read [docs/GECKO_BUILD.md](docs/GECKO_BUILD.md) for the detailed source checkout/build instructions, compatibility warnings and security caveats. The Navi GitHub repository intentionally stores just our customizations and integration tools, **not an entire forked copy of the enormous Firefox source tree**.
-
-## Developing against Firefox source
-
-For a real Gecko fork, use [Mozilla's official Windows build guide](https://firefox-source-docs.mozilla.org/setup/windows_build.html) to install MozillaBuild and bootstrap [mozilla-firefox/firefox](https://github.com/mozilla-firefox/firefox). Mozilla currently recommends at least **40 GB free disk space** for Windows source builds. Start with an artifact build to iterate on frontend chrome; a later full source build will be necessary for application naming, icon branding, installers and update infrastructure. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
-## Validation
-
-```bash
-node scripts/validate.mjs
-```
-
-No Node runtime is required by the browser itself; Node is only used for repository checks. GitHub Actions validates the skin files and produces a Windows preview-profile smoke test. **A green CI check does not mean a Navi executable has been compiled. The Gecko integration has offline test coverage only.**
-
-## Roadmap
-
-See [docs/ROADMAP.md](docs/ROADMAP.md). Version `0.1.0-alpha` is reserved for the first genuinely independently branded, buildable Gecko application; this repository is currently the pre-alpha foundation, including a source-level integration tool and uncompiled branding overlay.
-
-## Licensing and attribution
-
-Repository-authored scripts, CSS, and documentation are available under the MIT license (see `LICENSE`). Mozilla Firefox source code and components remain under their respective licenses, principally the Mozilla Public License 2.0. The Navi mascot artwork and project branding are **not** covered by the MIT code license; contact the project owner before reusing them. Netscape and Firefox are trademarks of their respective owners, with no affiliation claimed.
+Repository-authored tooling and documentation use MIT; copied Mozilla/Firefox source remains subject to its original licenses, principally MPL 2.0. Navi mascot and distinctive original branding assets are excluded from the MIT tooling license. Navi Navigator is not affiliated with Mozilla, Firefox, AOL, or Netscape.

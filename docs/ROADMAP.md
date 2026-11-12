@@ -40,3 +40,18 @@
 - [ ] Signed installers and secure update releases
 
 **Definition of done:** do not claim a Windows executable exists until the executable itself has been compiled, launched and inspected. CI validation of preview CSS is not a browser build.
+
+
+## Gecko-first pivot (November 2026)
+
+The WebView2 prototype is now a legacy UX reference, not the implementation target.
+
+- [x] Add a pinned native Gecko build configuration with distinct Navi app name, basename, and GUID
+- [x] Add a source overlay that generates Navi-specific branding resources
+- [x] Add a CI test applying the overlay to **real upstream Mozilla files**
+- [x] Add manual Windows full-source build workflow for a properly provisioned dedicated runner
+- [ ] **Compile and launch a full independent Gecko Windows build** (blocking)
+- [ ] Verify the actual `navinavigator.exe`, application.ini metadata, and profile isolation
+- [ ] Remove old-browser user-visible branding, audit NSIS, and package the installer
+- [ ] Port the approved Navi Portal hero and skins to native Gecko browser chrome
+- [ ] Provide signed downloads and a secure Gecko update channel before production use

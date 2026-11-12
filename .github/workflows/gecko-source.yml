@@ -1,0 +1,54 @@
+name: Gecko source integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/apply_gecko_overlay.py'
+      - 'scripts/test_gecko_overlay.py'
+      - 'scripts/test_gecko_upstream_snapshot.py'
+      - 'scripts/Build-NaviGecko.sh'
+      - 'config/upstream.json'
+      - 'config/mozconfig.full'
+      - 'skins/**'
+      - 'assets/navi-compass.svg'
+      - '.github/workflows/gecko-source.yml'
+  pull_request:
+    paths:
+      - 'scripts/apply_gecko_overlay.py'
+      - 'scripts/test_gecko_overlay.py'
+      - 'scripts/test_gecko_upstream_snapshot.py'
+      - 'scripts/Build-NaviGecko.sh'
+      - 'config/**'
+      - 'skins/**'
+      - '.github/workflows/gecko-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-mozilla-source:
+    name: Check Navi branding against pinned Mozilla source
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test overlay with offline fixtures
+        run: python scripts/test_gecko_overlay.py
+      - name: Apply Navi overlay to actual pinned Firefox source files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/test_gecko_upstream_snapshot.py
+      - name: Validate Gecko build configuration and shell syntax
+        shell: bash
+        run: |
+          grep -q -- '--with-branding=browser/branding/navi' config/mozconfig.full
+          grep -q -- '--with-app-basename=NaviNavigator' config/mozconfig.full
+          grep -q -- '--with-app-name=navinavigator' config/mozconfig.full
+          ! grep -q '^ac_add_options --enable-artifact-builds' config/mozconfig.full
+          bash -n scripts/Build-NaviGecko.sh
+          git diff --check

@@ -1,0 +1,83 @@
+name: Gecko Windows x64 full build (dedicated runner)
+
+# Builds Firefox / Gecko source. Does NOT use the WebView2 prototype.
+# Run manually only on a *prepared* Windows x64 self-hosted runner with:
+#  - labels: self-hosted, windows, x64, navi-gecko
+#  - MozillaBuild in C:\mozilla-build and a bootstrapped Firefox checkout
+#  - NAVI_FIREFOX_SOURCE pointing to that checkout (no existing mozconfig)
+#  - 40+ GiB free storage, supported Visual Studio + Rust toolchain
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-gecko:
+    runs-on: [self-hosted, windows, x64, navi-gecko]
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: navi-source
+      - name: Validate MozillaBuild and source checkout
+        shell: pwsh
+        run: |
+          if (!(Test-Path 'C:\mozilla-build\start-shell.bat')) {
+            throw 'MozillaBuild must be installed in C:\mozilla-build'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:NAVI_FIREFOX_SOURCE)) {
+            throw 'Runner must define NAVI_FIREFOX_SOURCE pointing to a bootstrapped Firefox checkout'
+          }
+          if (!(Test-Path (Join-Path $env:NAVI_FIREFOX_SOURCE 'mach'))) {
+            throw 'Source checkout does not contain mach'
+          }
+          if (Test-Path (Join-Path $env:NAVI_FIREFOX_SOURCE '.mozconfig')) {
+            throw 'Navi requires a separate source checkout without .mozconfig'
+          }
+          if (Test-Path (Join-Path $env:NAVI_FIREFOX_SOURCE 'mozconfig')) {
+            throw 'Navi requires a separate source checkout without mozconfig'
+          }
+
+      - name: Full Gecko compile and package
+        shell: pwsh
+        run: |
+          function UnixPath([string]$windows) {
+            $normalized = $windows -replace '\\', '/'
+            if ($normalized -notmatch '^([a-zA-Z]):(/.*)$') {
+              throw "Source and repo paths must be absolute drive-letter paths: $windows"
+            }
+            return '/' + $Matches[1].ToLowerInvariant() + $Matches[2]
+          }
+          $repo = (Resolve-Path 'navi-source').Path
+          $src = (Resolve-Path $env:NAVI_FIREFOX_SOURCE).Path
+          if ($repo.Contains("'") -or $src.Contains("'")) {
+            throw 'Paths with single quotes are unsupported in MozillaBuild runner'
+          }
+          $repoUnix = UnixPath $repo
+          $sourceUnix = UnixPath $src
+          $command = "bash '$repoUnix/scripts/Build-NaviGecko.sh' '$sourceUnix'"
+          Write-Host "Launching MozillaBuild with a Navi full-source build."
+          & 'C:\mozilla-build\start-shell.bat' -no-start -defterm -c $command
+          if ($LASTEXITCODE -ne 0) { throw "Navi Gecko build failed with code $LASTEXITCODE" }
+
+      - name: Collect installer candidates and configuration evidence
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force 'navi-gecko-artifacts' | Out-Null
+          if ([string]::IsNullOrWhiteSpace($env:NAVI_FIREFOX_SOURCE)) { exit 0 }
+          $dist = Join-Path $env:NAVI_FIREFOX_SOURCE 'obj-navi-gecko\dist'
+          if (!(Test-Path $dist)) { exit 0 }
+          Get-ChildItem -Path $dist -File -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.Extension -in '.exe','.zip','.mar' -and $_.Length -lt 2000000000 } |
+            Select-Object -First 10 |
+            Copy-Item -Destination 'navi-gecko-artifacts' -ErrorAction Continue
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: navi-gecko-unsigned-unverified-windows-build
+          path: navi-gecko-artifacts/*
+          if-no-files-found: warn
+          retention-days: 7

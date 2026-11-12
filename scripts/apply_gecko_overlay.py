@@ -144,6 +144,20 @@ def prepare(src: Path, allow_unpinned: bool = False) -> dict[str, str]:
     if not (unofficial / "configure.sh").is_file():
         raise RuntimeError("Firefox unofficial branding layout not found")
 
+    # Reject incomplete Mozilla source layouts before modifying the checkout.
+    required = [
+        src / "browser" / "themes" / "shared" / "browser-shared.css",
+        unofficial / "branding.nsi",
+        unofficial / "moz.build",
+        unofficial / "content" / "jar.mn",
+        unofficial / "locales" / "en-US" / "brand.ftl",
+        unofficial / "locales" / "en-US" / "brand.properties",
+        unofficial / "pref" / "firefox-branding.js",
+    ]
+    missing = [str(p) for p in required if not p.is_file()]
+    if missing:
+        raise RuntimeError("Incomplete Firefox branding checkout; missing: " + ", ".join(missing))
+
     # Prepare changes up front; reject upstream mismatches before writing.
     moz_file = src / "browser" / "moz.configure"
     source_text = moz_file.read_text("utf-8")
@@ -204,10 +218,19 @@ trademarkInfo = { " " }
     installer = target / "branding.nsi"
     installer_text = installer.read_text("utf-8")
     installer_text = installer_text.replace("Mozilla Developer Preview", "Navi Navigator")
+    # Keep installer ownership and support URLs separate from Firefox. Stub
+    # installer signing/certificate values still require a formal release audit.
     installer_text = installer_text.replace('!define CompanyName           "mozilla.org"',
-                                             '!define CompanyName           "Navi Navigator"')
+        '!define CompanyName           "Navi Navigator"')
     installer_text = installer_text.replace("https://www.mozilla.org", "https://github.com/BlackShuck89/Navi-Navigator")
     installer_text = installer_text.replace("https://support.mozilla.org", "https://github.com/BlackShuck89/Navi-Navigator/issues")
+    # Never point the user's manual download page at a Firefox installer.
+    installer_text = installer_text.replace(
+        "https://www.mozilla.org/${AB_CD}/firefox/installer-help/?channel=release&installer_lang=${AB_CD}",
+        "https://github.com/BlackShuck89/Navi-Navigator/releases")
+    installer_text = installer_text.replace(
+        "https://www.mozilla.org/firefox/system-requirements/",
+        "https://github.com/BlackShuck89/Navi-Navigator")
     installer.write_text(installer_text, "utf-8")
 
     prefs = target / "pref" / "firefox-branding.js"
@@ -215,6 +238,8 @@ trademarkInfo = { " " }
     prefs_text = prefs_text.replace("https://nightly.mozilla.org", "https://github.com/BlackShuck89/Navi-Navigator/releases")
     prefs_text += '''\n// Development builds have NO secure Navi update server yet.
 pref("app.update.enabled", false);
+// Never attempt to use another product's update channel.
+pref("app.update.auto", false);
 '''
     prefs.write_text(prefs_text, "utf-8")
 
