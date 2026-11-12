@@ -2,282 +2,380 @@ using System.Net;
 
 namespace NaviNavigator;
 
+/// <summary>Self-contained, offline browser portal. No scripts or remote page assets.</summary>
 internal static class NaviPortal
 {
+    internal const string PreviewVersion = "0.0.4";
+
     internal static string BuildHtml(NaviSkin skin)
     {
-        // This is an offline generated page; nothing is fetched except links explicitly
-        // opened by the user. Character art is packaged locally with the application.
-        string portraitPath = Path.Combine(AppContext.BaseDirectory, "Assets", "navi-character.svg");
-        string portrait = "";
-        try
-        {
-            var info = new FileInfo(portraitPath);
-            if (info.Exists && info.Length is > 0 and < 1024 * 1024)
-                portrait = "data:image/svg+xml;base64," +
-                    Convert.ToBase64String(File.ReadAllBytes(portraitPath));
-        }
-        catch (Exception) { /* retain the compass fallback */ }
+        // The approved Navi hero illustration is the primary artwork. The older
+        // SVG is retained strictly as a fallback if a ZIP has missing assets.
+        string portrait = AssetUri("navi-approved-hero.webp");
+        if (string.IsNullOrEmpty(portrait)) portrait = AssetUri("navi-character.svg");
+        string emblem = AssetUri("navi-compass.svg");
 
-        string mark = AssetUri("navi-compass.svg");
-        string logoMarkup = string.IsNullOrEmpty(mark)
+        string heroArt = string.IsNullOrEmpty(portrait)
+            ? "<div class=\"hero-fallback\" aria-label=\"Navi Navigator compass\">✦</div>"
+            : "<img class=\"navi-art\" src=\"" + portrait +
+              "\" alt=\"Navi the Navigator, an adult teal-and-white fox explorer in a navy-and-ivory navigator jacket, greeting visitors with an outstretched hand\" />";
+        string logo = string.IsNullOrEmpty(emblem)
             ? "<span aria-hidden=\"true\">✦</span>"
-            : "<img src=\"" + mark + "\" alt=\"Navi Navigator compass logo\" />";
+            : "<img src=\"" + emblem + "\" alt=\"Navi Navigator compass and globe emblem\" />";
 
-        string portraitMarkup = string.IsNullOrEmpty(portrait)
-            ? """<div class="portrait-fallback" aria-label="Navi's compass emblem">✦</div>"""
-            : "<img class=\"navi-portrait\" src=\"" + portrait +
-              "\" alt=\"Navi the Navigator: teal, navy and white fox mascot\" />";
-
+        string id = WebUtility.HtmlEncode(skin.Id);
+        string name = WebUtility.HtmlEncode(skin.Name);
         string accent = WebUtility.HtmlEncode(skin.Accent);
         string soft = WebUtility.HtmlEncode(skin.AccentLight);
-        string top = WebUtility.HtmlEncode(skin.Top);
-        string bottom = WebUtility.HtmlEncode(skin.Bottom);
-        string nav = WebUtility.HtmlEncode(skin.Name);
-        string skinId = WebUtility.HtmlEncode(skin.Id);
 
         return $$"""
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy"
-  content="default-src 'none'; img-src data:; style-src 'unsafe-inline';">
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';">
 <title>Navi Portal</title>
 <style>
 :root {
-  --accent: {{accent}};
-  --accent-soft: {{soft}};
-  --chrome-top: {{top}};
-  --chrome-bottom: {{bottom}};
+ --navy:#0c2c2e; --deep:#0b283e; --teal:#229a9a; --aqua:#6ec6c4;
+ --cream:#e6f0f1; --violet:#6a5acd; --accent:{{accent}}; --soft:{{soft}};
+ --surface:#e4edf3; --text:#243e52; --pane:#e8f2f7;
+ --side1:#e1edf5; --side2:#acc5d6; --border:#8ba8ba;
+ --line:#80b9c7; --light:#fff; --card1:#fff; --card2:#d7e8ef;
+ --panelradius:9px; --shadow:0 2px 8px #123b5a24;
 }
-* { box-sizing: border-box; }
+* {box-sizing:border-box}
+html {scroll-behavior:smooth}
 body {
-  margin: 0;
-  min-height: 100vh;
-  font: 14px 'Trebuchet MS', Tahoma, Verdana, sans-serif;
-  color: #1c364b;
-  background: linear-gradient(135deg,#d8e8ed,#edf7fa 50%,#dce7ef);
+ margin:0; color:var(--text); background:linear-gradient(135deg,#d7e4ec,#eff5f8 48%,#cddfe9);
+ font:14px Tahoma,"Trebuchet MS",Verdana,sans-serif; min-width:320px;
 }
-.topline {
-  background:linear-gradient(180deg,#0e2b41,#0b4659 65%,#008087);
-  color:#f6ffff;
-  border-bottom:4px solid var(--accent-soft);
-  padding:20px 26px 24px;
-  display:flex;
-  align-items:center;
-  gap:15px;
+a {color:inherit} a:focus-visible {outline:3px solid #86dede;outline-offset:2px}
+.masthead {
+ position:relative; overflow:hidden; display:flex;align-items:center;gap:16px;
+ padding:15px max(20px,calc((100vw - 1580px)/2 + 20px));
+ color:#fff; border-bottom:3px solid #74d0d0;
+ background:linear-gradient(180deg,#163c55 0%,#0b3850 52%,#087881 100%);
+ box-shadow:inset 0 1px #a4e3e455,0 4px 10px #09243730;
 }
-.logo {
-  display:grid;
-  place-items:center;
-  width:64px;
-  height:64px;
-  flex:0 0 64px;
-  border:3px double #b9f1f0;
-  border-radius:50%;
-  background:radial-gradient(circle,#169ea2 30%,#083247);
-  box-shadow:inset 0 1px 10px #0008,0 2px 6px #0006;
-  font:48px Georgia,serif;
-  line-height:1;
+.masthead::after {
+ content:"";position:absolute;right:3%;top:-90px;width:500px;height:240px;pointer-events:none;
+ opacity:.20;border:1px solid #b0fafa;border-radius:50%;
+ box-shadow:0 0 0 46px #c3ffff14,0 0 0 96px #c3ffff12;
 }
- .logo span { transform:translateY(-2px); }
-.logo img { width:60px; height:60px; display:block; filter:drop-shadow(0 2px 3px #001b2b88); }
-h1 { margin:0; font:italic bold 38px Georgia,serif; letter-spacing:-1.4px; text-shadow:1px 2px 3px #001b2b; }
-.topline p { margin:5px 0 0; color:#abdedf; letter-spacing:3px; font-size:11px; text-transform:uppercase; }
-.frame { display:grid; grid-template-columns:184px minmax(0,1fr); max-width:1420px; margin:0 auto; }
-aside {
-  background:linear-gradient(180deg,#d4e4ef,#b5ccdb);
-  border-right:1px solid #91b0c1;
-  padding:12px 10px;
-  min-height:calc(100vh - 116px);
+.masthead-logo {width:64px;height:64px;flex:0 0 64px;filter:drop-shadow(0 3px 3px #00172566)}
+.masthead-logo img {width:100%;height:100%}
+.masthead-title {font:bold italic clamp(27px,3.2vw,43px) Georgia,serif;letter-spacing:-.6px;
+ text-shadow:1px 3px 2px #03182b;line-height:1}
+.masthead-sub {font:bold 10px Tahoma,sans-serif;letter-spacing:3.1px;color:#b2f0ed;margin-top:9px}
+.masthead-right {margin-left:auto;text-align:right;position:relative;z-index:1;font-size:11px;
+ color:#b9e6ed;letter-spacing:1px}
+.shell {display:grid;grid-template-columns:208px minmax(0,1fr);max-width:1580px;margin:0 auto;
+ min-height:calc(100vh - 119px);border-left:1px solid #93b0c0;border-right:1px solid #93b0c0}
+.sidebar {
+ padding:14px 11px 20px;background:linear-gradient(90deg,var(--side1),var(--side2));
+ border-right:1px solid #789bab;box-shadow:inset 1px 0 #fff8;
 }
-aside h2 { margin:10px 0 5px; padding:5px 7px; font-size:12px; color:#284c60;
-  border:1px solid #8aabba; background:linear-gradient(#f7fcfe,#c5dce9); }
-aside a { display:block; padding:7px 8px; color:#154c66; font-size:13px; text-decoration:none; border-radius:4px; }
-aside a:hover { background:linear-gradient(var(--accent-soft),#d9f7f6); color:#082d42; }
-.content { padding:24px 26px 34px; }
-.welcome {
-  position:relative; display:grid; grid-template-columns:230px minmax(0,1fr);
-  gap:25px; min-height:294px; padding:18px;
-  background:linear-gradient(140deg,#e3f2f6 15%,#e5f5f5 53%,#bad7e4);
-  border:1px solid #9dbdc9;
-  border-radius:8px;
-  box-shadow:inset 0 2px #fff,0 3px 8px #45677724;
+.side-brand {display:flex;gap:9px;align-items:center;font-weight:bold;padding:11px 9px 13px;
+ color:#173e53;white-space:nowrap}
+.side-brand img {width:25px;height:25px}
+.side-group {margin-bottom:15px}
+.side-title {
+ display:flex;justify-content:space-between;align-items:center;
+ background:linear-gradient(#f8fcff,#c8dce8);border:1px solid #8baab9;border-radius:3px;
+ padding:7px 9px;font-weight:bold;font-size:12px;color:#183d55;
+ box-shadow:inset 0 1px #fff,0 1px 2px #6d8b9e3b;
 }
-.portrait-card { display:flex; flex-direction:column; align-items:center; justify-content:center;
-  background:radial-gradient(circle at 50% 35%,#dffbfa,#2c7e8e 73%,#143b56);
-  border:3px solid #e6ffff; outline:1px solid #6a9aa8; border-radius:10px;
-  overflow:hidden; box-shadow:0 3px 10px #123c4f44;
+.side-title b {color:#177d8a}
+.side-link {display:flex;gap:10px;align-items:center;padding:9px 10px;text-decoration:none;
+ color:#204c61;border:1px solid transparent;border-radius:3px;font-size:12px;font-weight:600}
+.side-link span {font-size:16px;color:#157f8e;min-width:20px;text-align:center}
+.side-link:hover {background:linear-gradient(#d4f8f6,#a8dbe3);border-color:#7bafbf;color:#113a50}
+.side-note {border-top:1px solid #87adbc;margin-top:18px;padding:16px 9px;color:#527082;font-size:11px;line-height:1.55}
+.main {min-width:0;padding:20px clamp(16px,2.2vw,34px) 28px}
+.section-caption {display:flex;align-items:center;gap:10px;margin:20px 0 11px;
+ font:bold 11px Tahoma,sans-serif;letter-spacing:1.7px;color:#316575;text-transform:uppercase}
+.section-caption::after {content:"";height:1px;flex:1;background:linear-gradient(90deg,#78adb9,transparent)}
+.hero {
+ position:relative;min-height:360px;display:grid;grid-template-columns:minmax(0,58%) minmax(0,42%);
+ isolation:isolate;overflow:hidden;border:1px solid #5d9caa;border-radius:var(--panelradius);
+ background:linear-gradient(130deg,#05283c,#0f5668 68%,#0a2b43);
+ box-shadow:inset 0 1px #cffbf855,0 4px 13px #072c4760;
 }
-.navi-portrait { display:block; height:260px; max-width:100%; width:auto; object-fit:contain;
-  filter:drop-shadow(0 4px 9px #051f3566);
+.hero::after {content:"";position:absolute;inset:0;pointer-events:none;
+ border:2px solid #a8f7f126;border-radius:inherit}
+.hero-photo {height:100%;min-height:360px;overflow:hidden;position:relative;background:#092c3d}
+.hero-photo::after {content:"";position:absolute;inset:0;
+ background:linear-gradient(90deg,transparent 76%,#0e4353 100%);pointer-events:none}
+.navi-art {width:100%;height:100%;display:block;object-fit:cover;object-position:center 30%}
+.hero-fallback {font:130px Georgia,serif;color:#9df4eb;display:grid;place-items:center;height:100%}
+.hero-copy {position:relative;padding:34px 28px 25px 14px;display:flex;
+ flex-direction:column;justify-content:center;color:#eefdfc}
+.hero-copy::before {
+ content:"";position:absolute;width:330px;height:270px;right:-100px;top:-135px;opacity:.15;
+ border-radius:50%;border:2px solid #b9ffff;box-shadow:0 0 0 26px #9afffa12,0 0 0 59px #9afffa12;
 }
-.portrait-fallback { color:white; font:130px Georgia,serif; text-shadow:0 3px 18px #072638; }
-.caption { margin-top:8px; padding:2px 10px; border-radius:30px; color:#e7ffff;
-  font-size:12px; font-weight:bold; background:#06334b99; letter-spacing:.3px; }
-.hero h2 { color:#163b54; margin:15px 0 5px; font:italic bold 29px Georgia,serif; }
-.hero p { line-height:1.6; max-width:660px; }
-.hero .slogan { font-weight:bold; font-size:16px; color:#007982; }
-.wave { height:5px; border-radius:3px; background:linear-gradient(to right,var(--accent),#a4e7e4,transparent);
-  margin:22px 0; }
-.tiles { display:grid; grid-template-columns:repeat(4,minmax(145px,1fr)); gap:13px; margin-top:18px; }
-.tiles a { color:#183d56; display:block; text-decoration:none; border:1px solid #93b3c2;
-  border-radius:6px; background:linear-gradient(#f9ffff,#d2e4ed); padding:17px 13px 15px;
-  box-shadow:inset 0 1px #fff,0 2px 3px #6082962e; min-height:124px; }
-.tiles a:hover { background:linear-gradient(#f5ffff,#b6eeee); border-color:var(--accent); }
-.tile-symbol { color:#007d85; font:32px Georgia,serif; display:block; margin-bottom:11px; }
-.tile-title { font-weight:800; display:block; font-size:15px; }
-.tile-note { display:block; font-size:12px; margin-top:6px; line-height:1.4; }
-.info { margin-top:25px; border-top:1px solid #a4c3cd; padding:15px 3px 0; color:#3c6376; }
-small { color:#5a7383; }
-/* The portal responds to the actual loaded skin, not only its accent color. */
-body[data-skin="classic"] { font-family:Tahoma,Verdana,sans-serif;
- background:#d9e3ea; }
-body[data-skin="classic"] .topline { background:linear-gradient(#164e64,#306e86); }
-body[data-skin="classic"] aside { background:linear-gradient(#e7edf1,#c3cfd8); }
-body[data-skin="classic"] .welcome,body[data-skin="classic"] .tiles a {
- border-radius:1px; box-shadow:inset 1px 1px #fff,2px 2px #9cadb8; }
-body[data-skin="classic"] .portrait-card { border-radius:2px; }
-body[data-skin="fusion"] { color:#e6f8f8; background:linear-gradient(135deg,#13283e,#25556a); }
-body[data-skin="fusion"] .topline { background:linear-gradient(#0a162c,#17455d 60%,#006c79); }
-body[data-skin="fusion"] aside { background:linear-gradient(#19374d,#102a43);border-color:#56b0b5; }
-body[data-skin="fusion"] aside h2 { color:#e1ffff; background:linear-gradient(#32687a,#164254);border-color:#177a83; }
-body[data-skin="fusion"] aside a { color:#c5eff2; }
-body[data-skin="fusion"] aside a:hover { background:#21747c; color:white; }
-body[data-skin="fusion"] .welcome { color:#dbf8f8; border-color:#21848b;
- background:linear-gradient(125deg,#183a50,#2d6780 67%,#153a55); box-shadow:inset 0 1px #8bdbd878,0 3px 12px #020d1c; }
-body[data-skin="fusion"] .hero h2 { color:#ecffff; }
-body[data-skin="fusion"] .hero .slogan { color:#a8f6ed; }
-body[data-skin="fusion"] .portrait-card { background:radial-gradient(circle at 45% 25%,#42a7aa,#102c47); outline-color:#167b87; }
-body[data-skin="fusion"] .tiles a { color:#e7f8f8; border-color:#307d86;
- background:linear-gradient(#315e72,#173650); }
-body[data-skin="fusion"] .tiles a:hover { background:linear-gradient(#347b84,#236372); }
-body[data-skin="fusion"] .tile-symbol { color:#97eeee; }
-body[data-skin="fusion"] .info,body[data-skin="fusion"] small { color:#a8d9df; }
-body[data-skin="fusion"] .info { border-color:#397d88; }
-@media(max-width:850px) {
-  .frame { grid-template-columns:1fr; }
-  aside { display:none; }
-  .content {padding:16px;}
-  .tiles { grid-template-columns:repeat(2,minmax(145px,1fr)); }
+.hero-kicker {display:block;color:#98e5e3;letter-spacing:2px;font:bold 10px Tahoma,sans-serif;
+ margin-bottom:10px}
+.hero h1 {margin:0;font:italic bold clamp(27px,2.4vw,38px) Georgia,serif;line-height:1.12;
+ letter-spacing:-.4px;text-shadow:1px 2px 2px #061a2e}
+.hero-rule {height:4px;width:145px;border-radius:3px;margin:17px 0;
+ background:linear-gradient(90deg,#63c5c7,#c4ffff 65%,transparent)}
+.hero p {max-width:440px;margin:0;line-height:1.65;color:#d1eef0;font-size:13px}
+.hero-caption {color:#b1f1ed!important;font-style:italic;font-size:15px!important;margin-bottom:12px!important}
+.hero-actions {display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}
+.hero-actions a {
+ display:inline-flex;align-items:center;gap:7px;min-height:35px;text-decoration:none;
+ border:1px solid #70c5c8;border-radius:5px;padding:9px 13px;
+ color:#fff;background:linear-gradient(#168e9a,#076574);
+ box-shadow:inset 0 1px #b1f5f57a,0 2px 3px #00142180;font-weight:700;font-size:12px
 }
-@media(max-width:500px) {
-  .welcome { grid-template-columns:1fr; }
-  .portrait-card { min-height:230px; }
-  .topline {padding:14px;}
-  h1 {font-size:28px;}
+.hero-actions a.secondary {background:linear-gradient(#31596c,#16394d);border-color:#789dac}
+.hero-actions a:hover {background:linear-gradient(#39b4b5,#0d8990)}
+.hero-status {color:#a2dbe0;font-size:10px;margin-top:19px;letter-spacing:.25px}
+.quicklinks {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.portal-card {
+ display:flex;flex-direction:column;text-decoration:none;min-width:0;
+ border:1px solid #90b2c2;border-radius:var(--panelradius);
+ background:linear-gradient(var(--card1),var(--card2));color:var(--text);
+ box-shadow:inset 0 1px var(--light),0 2px 4px #5e7e9130;
+ padding:17px 17px 15px;min-height:157px;transition:filter .12s ease,transform .12s ease
+}
+.portal-card:hover {filter:brightness(1.03);transform:translateY(-2px);border-color:#318e97}
+.portal-card-icon {width:42px;height:42px;display:grid;place-items:center;
+ color:#fff;background:linear-gradient(#39b7b7,#087184);
+ border:1px solid #2d8491;border-radius:11px;font:bold 25px Georgia,serif;
+ box-shadow:inset 0 1px #eaffff88,0 2px 2px #0b30412d;margin-bottom:13px}
+.portal-card strong {font:bold 15px Tahoma,sans-serif;margin-bottom:6px}
+.portal-card small {font-size:12px;line-height:1.4;color:#537083}
+.lower {display:grid;grid-template-columns:1.28fr 1fr;gap:13px}
+.panel {border:1px solid var(--border);background:linear-gradient(var(--card1),var(--card2));
+ border-radius:var(--panelradius);box-shadow:var(--shadow);min-width:0;overflow:hidden}
+.panel-head {padding:10px 14px;background:linear-gradient(#d9e8f0,#adcedc);
+ border-bottom:1px solid #8cacbc;box-shadow:inset 0 1px #fff;
+ color:#143f57;font:bold 13px Tahoma,sans-serif}
+.panel-body {padding:14px 16px 17px;line-height:1.55;font-size:12px}
+.panel-body p {margin:3px 0 11px}
+.panel-body a {color:#0c7785}
+.panel-body a:hover {color:#00515a}
+.track {display:flex;gap:12px;align-items:center}
+.track-mark {font:bold 37px Georgia,serif;color:#168996}
+.skin-strips {display:flex;gap:7px;margin-top:12px}
+.skin-sample {flex:1;border:1px solid #7d9ca8;border-radius:4px;height:30px;position:relative;
+ box-shadow:inset 0 2px #fff9}
+.skin-sample.modern {background:linear-gradient(#eaf2f7,#aecada)}
+.skin-sample.classic {background:linear-gradient(#f8f8f8,#c6d0d8);border-radius:0}
+.skin-sample.fusion {background:linear-gradient(#477e92,#142b43);border-color:#0a2e47}
+.skin-sample::after {content:"";position:absolute;left:8px;right:8px;top:10px;
+ height:8px;background:#fff7;border-radius:4px}
+.foot {
+ display:flex;gap:12px;align-items:center;justify-content:space-between;
+ margin-top:21px;padding:14px 17px;border:1px solid #88b3bf;border-radius:var(--panelradius);
+ color:#f0ffff;background:linear-gradient(100deg,#16465a,#0e777f 60%,#092c45);
+ box-shadow:inset 0 1px #afffff53;font-size:12px}
+.foot strong {font:italic bold 17px Georgia,serif}.foot span {font-size:10px;color:#b9e1e5}
+body[data-skin="classic"] {
+ --surface:#e6e8ec; --text:#273c4e; --pane:#edf1f3; --side1:#e8ebef;
+ --side2:#c4cbd4; --border:#929fac; --card1:#f7f8fa; --card2:#d3d9e1;
+ --panelradius:0px; --shadow:2px 2px 0 #9facb2;
+ font-family:Tahoma,Verdana,sans-serif;background:#dae0e6;
+}
+body[data-skin="classic"] .masthead {background:linear-gradient(#1c526c,#29687d)}
+body[data-skin="classic"] .sidebar {background:linear-gradient(90deg,#e6e9ec,#c4cfd9)}
+body[data-skin="classic"] .hero,body[data-skin="classic"] .portal-card,
+body[data-skin="classic"] .panel {border-radius:0;box-shadow:inset 1px 1px #fff8,2px 2px #8d9fa8}
+body[data-skin="classic"] .portal-card-icon,body[data-skin="classic"] .hero-actions a {border-radius:0}
+body[data-skin="fusion"] {
+ --surface:#1b3a50;--text:#e4f6f6;--side1:#15384d;--side2:#0d253e;
+ --border:#286676;--card1:#2b596c;--card2:#173449;--light:#779db044;
+ --panelradius:12px;--shadow:0 4px 11px #0008;
+ background:linear-gradient(#0a1828,#1d445b);color:#e6f5f7
+}
+body[data-skin="fusion"] .sidebar {background:linear-gradient(90deg,#173c52,#102b43)}
+body[data-skin="fusion"] .side-brand,body[data-skin="fusion"] .side-link {color:#d8f9fa}
+body[data-skin="fusion"] .side-link span {color:#72d8d5}
+body[data-skin="fusion"] .side-title {background:linear-gradient(#30677b,#173e58);
+ border-color:#257787;color:#edffff;box-shadow:inset 0 1px #93efff4b}
+body[data-skin="fusion"] .side-note {color:#a4cbd2}
+body[data-skin="fusion"] .masthead {background:linear-gradient(#051b2b,#104962 63%,#0b727c)}
+body[data-skin="fusion"] .hero {border-color:#4fc4c5;box-shadow:0 0 15px #12a9ad40}
+body[data-skin="fusion"] .portal-card {border-color:#40808d;color:#f0ffff}
+body[data-skin="fusion"] .portal-card-icon {background:linear-gradient(#37c6c0,#07546b)}
+body[data-skin="fusion"] .portal-card small {color:#b6dadf}
+body[data-skin="fusion"] .panel-head {background:linear-gradient(#337788,#19465d);
+ color:#f0ffff;border-color:#1c8390;box-shadow:inset 0 1px #b7ffff4a}
+body[data-skin="fusion"] .panel-body a {color:#8de8e6}
+body[data-skin="fusion"] .track-mark {color:#8de8e6}
+body[data-skin="fusion"] .skin-sample {border-color:#72b9c2}
+@media(max-width:1150px) {
+ .hero {grid-template-columns:minmax(0,53%) minmax(0,47%)}
+ .hero-copy {padding:25px 18px}
+ .quicklinks {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:870px) {
+ .shell {grid-template-columns:1fr}
+ .sidebar {display:none}
+ .main {padding:14px}
+ .hero {grid-template-columns:1fr}
+ .hero-photo {height:350px;min-height:0}
+ .hero-copy {padding:22px 25px 27px}
+ .navi-art {object-position:center 24%}
+ .lower {grid-template-columns:1fr}
+}
+@media(max-width:520px) {
+ .masthead {padding:14px;gap:11px}
+ .masthead-logo {height:50px;width:50px;flex-basis:50px}
+ .masthead-right {display:none}
+ .masthead-sub {font-size:8px;letter-spacing:1.6px}
+ .quicklinks {grid-template-columns:1fr}
+ .hero-photo {height:260px}
+ .hero-copy {padding:20px 18px}
+ .foot {align-items:flex-start;flex-direction:column}
 }
 </style>
 </head>
-<body data-skin="{{skinId}}">
-<header class="topline">
-  <div class="logo">{{logoMarkup}}</div>
-  <div><h1>Navi Navigator</h1><p>Charting new frontiers across the web</p></div>
+<body data-skin="{{id}}">
+<header class="masthead">
+ <div class="masthead-logo">{{logo}}</div>
+ <div><div class="masthead-title">Navi Navigator</div>
+  <div class="masthead-sub">THE EXPLORER'S BROWSER</div></div>
+ <div class="masthead-right">✦ CHARTING NEW FRONTIERS ✦<br>EST. 2026</div>
 </header>
-<div class="frame">
-  <aside>
-    <h2>◈ Navi Services</h2>
-    <a href="https://github.com/BlackShuck89/Navi-Navigator">Project Home</a>
-    <a href="https://github.com/BlackShuck89/Navi-Navigator/releases">Downloads</a>
-    <a href="https://github.com/BlackShuck89/Navi-Navigator/issues">Support &amp; Feedback</a>
-    <h2>◈ Explore</h2>
-    <a href="https://archive.org/">Internet Archive</a>
-    <a href="https://en.wikipedia.org/">Wikipedia</a>
-    <a href="https://www.mozilla.org/">Mozilla</a>
-  </aside>
-  <main class="content">
-    <section class="welcome">
-      <div class="portrait-card">
-        {{portraitMarkup}}
-        <div class="caption">Navi the Navigator</div>
-      </div>
-      <div class="hero">
-        <h2>Welcome to the Navi Portal</h2>
-        <p class="slogan">Home is where the link is.</p>
-        <p>Meet Navi, the turquoise-and-navy fox who charts the open web. Familiar menus,
-           expressive buttons, customizable interface skins, and the freedom
-           to explore without the browser disappearing into minimalism.</p>
-        <div class="wave"></div>
-        <small>Appearance: {{nav}} &nbsp;·&nbsp; Technical preview · WebView2 backend</small>
-      </div>
-    </section>
-    <section class="tiles">
-      <a href="https://github.com/BlackShuck89/Navi-Navigator/releases">
-        <span class="tile-symbol">↓</span><span class="tile-title">Downloads</span>
-        <span class="tile-note">Get the latest test builds.</span>
-      </a>
-      <a href="https://github.com/BlackShuck89/Navi-Navigator">
-        <span class="tile-symbol">✦</span><span class="tile-title">Project</span>
-        <span class="tile-note">Navi's home on GitHub.</span>
-      </a>
-      <a href="https://archive.org/">
-        <span class="tile-symbol">⌁</span><span class="tile-title">Web Archive</span>
-        <span class="tile-note">Explore the internet's history.</span>
-      </a>
-      <a href="https://github.com/BlackShuck89/Navi-Navigator/issues">
-        <span class="tile-symbol">?</span><span class="tile-title">Feedback</span>
-        <span class="tile-note">Report bugs and suggest improvements.</span>
-      </a>
-    </section>
-    <div class="info">Built for the future. Inspired by the web's adventurous past.<br>
-      <small>Navi Navigator 0.0.3 preview · This page and its artwork are bundled locally with the browser.</small>
+<div class="shell">
+ <aside class="sidebar">
+  <div class="side-brand">{{logo}} <span>Navi Sidebar</span></div>
+  <nav class="side-group" aria-label="Navi services">
+   <div class="side-title">Navi Services <b>◆</b></div>
+   <a class="side-link" href="https://github.com/BlackShuck89/Navi-Navigator/releases"><span>↓</span> Downloads</a>
+   <a class="side-link" href="https://github.com/BlackShuck89/Navi-Navigator"><span>✦</span> Project &amp; News</a>
+   <a class="side-link" href="https://github.com/BlackShuck89/Navi-Navigator/issues"><span>✉</span> Feedback</a>
+  </nav>
+  <nav class="side-group" aria-label="Explore the web">
+   <div class="side-title">Explore the Web <b>◆</b></div>
+   <a class="side-link" href="https://archive.org/"><span>◉</span> Internet Archive</a>
+   <a class="side-link" href="https://en.wikipedia.org/"><span>▤</span> Wikipedia</a>
+   <a class="side-link" href="https://www.mozilla.org/"><span>◈</span> Mozilla</a>
+  </nav>
+  <nav class="side-group" aria-label="Customize Navi">
+   <div class="side-title">Customization <b>◆</b></div>
+   <a class="side-link" href="https://github.com/BlackShuck89/Navi-Navigator/blob/main/prototype/NaviNavigator/SKINNING.md"><span>✧</span> Create a Skin</a>
+   <a class="side-link" href="https://github.com/BlackShuck89/Navi-Navigator/issues"><span>⚙</span> Suggest a Feature</a>
+  </nav>
+  <div class="side-note">✦ KEEP EXPLORING<br>Home is where the link is.<br>The web is our ocean.</div>
+ </aside>
+ <main class="main">
+  <section class="hero" aria-label="Welcome to the Navi Portal">
+   <div class="hero-photo">{{heroArt}}</div>
+   <div class="hero-copy">
+    <span class="hero-kicker">✦ WELCOME ABOARD</span>
+    <h1>Chart your own<br>course through<br>the web.</h1>
+    <div class="hero-rule"></div>
+    <p class="hero-caption">Meet Navi, your guide to new frontiers.</p>
+    <p>Classic menus, expressive navigation, and skins with personality.
+    Navi Navigator is bringing back the sense of discovery that made the web exciting.</p>
+    <div class="hero-actions">
+     <a href="https://archive.org/">Explore the Web&nbsp; ↗</a>
+     <a href="https://github.com/BlackShuck89/Navi-Navigator/releases" class="secondary">Get the Latest Build&nbsp; ↓</a>
     </div>
-  </main>
+    <div class="hero-status">Navi Navigator {{PreviewVersion}} · {{name}} · Windows technical preview</div>
+   </div>
+  </section>
+  <div class="section-caption">Navi Services <span>✧</span></div>
+  <section class="quicklinks" aria-label="Portal services">
+   <a class="portal-card" href="https://github.com/BlackShuck89/Navi-Navigator/releases">
+     <span class="portal-card-icon">↓</span><strong>Downloads</strong>
+     <small>New versions, test releases, and development builds.</small></a>
+   <a class="portal-card" href="https://github.com/BlackShuck89/Navi-Navigator">
+     <span class="portal-card-icon">◈</span><strong>Navi Project</strong>
+     <small>Explore the source code, roadmap, and project news.</small></a>
+   <a class="portal-card" href="https://github.com/BlackShuck89/Navi-Navigator/blob/main/prototype/NaviNavigator/SKINNING.md">
+     <span class="portal-card-icon">✧</span><strong>Personalize</strong>
+     <small>Make your browser your own with installable skins.</small></a>
+   <a class="portal-card" href="https://github.com/BlackShuck89/Navi-Navigator/issues">
+     <span class="portal-card-icon">✉</span><strong>Community</strong>
+     <small>Report a bug, suggest improvements, and join the project.</small></a>
+  </section>
+  <div class="section-caption">Chart Your Course <span>✧</span></div>
+  <section class="lower" aria-label="More from Navi Navigator">
+   <div class="panel">
+    <div class="panel-head">◈ &nbsp; Discover the Web with Navi</div>
+    <div class="panel-body track"><div class="track-mark">✦</div>
+      <div><p><strong>Built for the future. Inspired by an adventurous past.</strong></p>
+        A familiar desktop interface can still feel personal. Visit the
+        <a href="https://archive.org/">Internet Archive</a> to explore the early web,
+        or see what is being built for Navi on <a href="https://github.com/BlackShuck89/Navi-Navigator">GitHub</a>.</div>
+    </div>
+   </div>
+   <div class="panel">
+    <div class="panel-head">✧ &nbsp; Three Ways to Navigate</div>
+    <div class="panel-body">
+      <p>Modern, Classic, and Fusion have their own toolbar geometry, tab treatment,
+      and portal styling. Switch anytime with <strong>View → Skins</strong>.</p>
+      <div class="skin-strips" aria-label="Navi skin color previews">
+       <div class="skin-sample modern" title="Navi Modern"></div>
+       <div class="skin-sample classic" title="Navi Classic"></div>
+       <div class="skin-sample fusion" title="Navi Fusion"></div>
+      </div>
+    </div>
+   </div>
+  </section>
+  <footer class="foot">
+   <strong>Home is where the link is. ✦</strong>
+   <span>Navi Navigator {{PreviewVersion}} · WebView2 prototype · Artwork bundled locally · No legacy browser trademarks</span>
+  </footer>
+ </main>
 </div>
-</body>
-</html>
+</body></html>
 """;
     }
-    /// <summary>A local About page with original Navi character and emblem art.</summary>
+
     internal static string BuildAboutHtml(NaviSkin skin)
     {
-        string mascot = AssetUri("navi-character.svg");
-        string mark = AssetUri("navi-compass.svg");
-        string mainArt = string.IsNullOrEmpty(mascot)
-            ? "<div class=\"fallback\">✦</div>"
-            : "<img class=\"portrait\" src=\"" + mascot +
-              "\" alt=\"Navi the Navigator, teal fox with white markings and compass jacket\">";
-        string brandArt = string.IsNullOrEmpty(mark)
-            ? "✦" : "<img class=\"mark\" src=\"" + mark + "\" alt=\"Navi Navigator compass emblem\">";
-        string accent = WebUtility.HtmlEncode(skin.Accent);
+        string art = AssetUri("navi-approved-hero.webp");
+        if (string.IsNullOrEmpty(art)) art = AssetUri("navi-character.svg");
+        string emblem = AssetUri("navi-compass.svg");
+        string image = string.IsNullOrEmpty(art) ? "<span>✦</span>"
+            : "<img class=\"art\" src=\"" + art + "\" alt=\"Navi the Navigator\" />";
+        string mark = string.IsNullOrEmpty(emblem) ? "✦"
+            : "<img class=\"badge\" src=\"" + emblem + "\" alt=\"Navi compass emblem\" />";
         string skinName = WebUtility.HtmlEncode(skin.Name);
+
         return $$"""
-<!doctype html><html lang="en"><head><meta charset="utf-8">
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline';">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>About Navi Navigator</title>
 <style>
-* {box-sizing:border-box} body {margin:0;font:13px 'Trebuchet MS',Tahoma,sans-serif;color:#153449;
-background:linear-gradient(160deg,#f7fafc,#c8dfe8)}
-header {display:flex;align-items:center;gap:13px;padding:17px 24px;
-background:linear-gradient(#19364e,#096d7b);border-bottom:4px solid {{accent}};color:white}
-.mark {height:64px;width:64px;filter:drop-shadow(1px 3px 3px #0006)}
-h1{margin:0;font:bold italic 31px Georgia,serif}header p{margin:3px 0;color:#b8ecee;letter-spacing:2px;font-size:10px}
-.frame{display:grid;grid-template-columns:190px 1fr;gap:22px;margin:20px;padding:12px;
-border:1px solid #91b2c2;background:linear-gradient(#fff,#d8e9ef);box-shadow:inset 0 2px #fff,0 3px 7px #0e405222}
-.left{background:linear-gradient(#b9ebea,#3b93a2 85%,#16374f);text-align:center;overflow:hidden;min-height:246px}
-.portrait{width:100%;height:240px;object-fit:contain;filter:drop-shadow(0 3px 4px #001c3a66)}
-.fallback{font:90px Georgia,serif;color:white;padding-top:60px}
-h2{font:italic bold 23px Georgia,serif;margin:8px 0 11px}.body{line-height:1.65}
-strong{color:#086b79} .label{display:inline-block;width:85px;color:#446678}
-footer{text-align:center;color:#547386;font-size:11px;margin-bottom:12px}
+*{box-sizing:border-box}body{margin:0;font:13px Tahoma,sans-serif;background:linear-gradient(#e8f1f5,#bdcfd9);color:#17364b}
+header{height:94px;display:flex;align-items:center;gap:14px;padding:16px 25px;
+ background:linear-gradient(#173e57,#075e69);color:white;border-bottom:4px solid #7bd3d1}
+.badge{width:63px;height:63px}h1{margin:0;font:italic bold 36px Georgia,serif}
+.tagline{letter-spacing:3px;font-size:10px;margin:7px 0;color:#baf5ee}
+.frame{display:grid;grid-template-columns:41% 59%;margin:17px;border:1px solid #8faeba;
+ background:linear-gradient(#fff,#d9e9ed);box-shadow:inset 0 1px white,0 3px 8px #0f384a3b}
+.illustration{background:#0b3e50;min-height:306px;overflow:hidden}
+.art{width:100%;height:100%;object-fit:cover;object-position:32% center;display:block}
+.content{padding:16px 20px 14px;line-height:1.5}
+h2{font:italic bold 24px Georgia,serif;color:#174c64;margin:0 0 8px}
+.content p{margin:7px 0 12px}strong{color:#086b79}
+.spec{display:grid;grid-template-columns:80px auto;gap:6px}
+.spec b{color:#41667b}footer{text-align:center;color:#567786;font-size:11px}
 </style></head>
-<body><header>{{brandArt}}<div><h1>Navi Navigator</h1><p>CHARTING NEW FRONTIERS</p></div></header>
-<div class="frame"><div class="left">{{mainArt}}</div>
-<div class="body"><h2>About Navi Navigator</h2>
-<p><strong>Version 0.0.3</strong> — Windows technical preview</p>
-<p><span class="label">Appearance</span>{{skinName}}<br>
-<span class="label">Rendering</span>Microsoft WebView2 (Chromium)<br>
-<span class="label">Platform</span>Windows x64</p>
-<p>Meet Navi, a turquoise fox explorer with white fur markings, navy paws and tail accents,
-and a celestial globe-grid motif. His compass represents navigation and curiosity.</p>
-<p>An independently branded, nostalgic desktop browser prototype inspired by the desktop-web era.
-Firefox/Gecko integration is a separate ongoing development effort.</p>
-<p><strong>Experimental software:</strong> no built-in auto-updates or code signing;
-not recommended for sensitive browsing.</p></div></div>
-<footer>Original Navi Navigator branding · Not affiliated with Netscape, Mozilla or Microsoft.</footer>
+<body><header>{{mark}}<div><h1>Navi Navigator</h1>
+ <div class="tagline">THE EXPLORER'S BROWSER</div></div></header>
+<div class="frame">
+ <div class="illustration">{{image}}</div>
+ <section class="content">
+  <h2>Chart new frontiers.</h2>
+  <p><strong>Navi Navigator {{PreviewVersion}}</strong> — Windows technical preview</p>
+  <div class="spec"><b>Appearance</b><span>{{skinName}}</span>
+   <b>Rendering</b><span>Microsoft WebView2 (Chromium)</span>
+   <b>Platform</b><span>Windows x64</span></div>
+  <p>The open web should feel like an adventure. Navi brings expressive
+     desktop controls and real interface skins to a modern rendering backend.</p>
+  <p><strong>Experimental software:</strong> unsigned, without automatic updates.
+     Avoid sensitive browsing. The Firefox/Gecko fork is a separate project milestone.</p>
+ </section>
+</div><footer>Original Navi branding · No affiliation with Netscape, Mozilla, or Microsoft.</footer>
 </body></html>
 """;
     }
@@ -285,14 +383,23 @@ not recommended for sensitive browsing.</p></div></div>
     private static string AssetUri(string filename)
     {
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", filename);
+        string mime = Path.GetExtension(filename).ToLowerInvariant() switch
+        {
+            ".svg" => "image/svg+xml",
+            ".webp" => "image/webp",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            _ => ""
+        };
+        if (string.IsNullOrEmpty(mime)) return "";
         try
         {
             var file = new FileInfo(path);
-            if (file.Exists && file.Length is > 0 and < 1024 * 1024)
-                return "data:image/svg+xml;base64," + Convert.ToBase64String(File.ReadAllBytes(path));
+            // WebView2 NavigateToString supports 2 MB of HTML; keep all assets small.
+            if (file.Exists && file.Length is > 0 and < 650 * 1024)
+                return "data:" + mime + ";base64," + Convert.ToBase64String(File.ReadAllBytes(path));
         }
-        catch (Exception) { /* Fallback if a packaged asset is missing. */ }
+        catch (Exception) { /* Fallback if a packaged resource is unavailable. */ }
         return "";
     }
-
 }

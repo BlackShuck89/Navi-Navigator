@@ -9,7 +9,7 @@ namespace NaviNavigator;
 
 internal sealed class BrowserForm : Form
 {
-    private const string PreviewTitle = "Navi Navigator — Technical Preview 0.0.2";
+    private const string PreviewTitle = "Navi Navigator — Technical Preview 0.0.4";
     private readonly BrowserSettings _settings = BrowserSettings.Load();
     private readonly SkinCatalog _catalog = new();
     private NaviSkin _skin;
@@ -568,7 +568,8 @@ internal sealed class BrowserForm : Form
             Text = PreviewTitle;
             return;
         }
-        bool home = _tabs.SelectedTab is { } page && _homePages.Contains(page);
+        bool home = _tabs.SelectedTab is { } page && (_homePages.Contains(page) ||
+            (page.Text == "Navi Portal" && current.Source == "about:blank"));
         _address.Text = home ? "navi://home" : (current.Source ?? "");
         Text = $"{(_tabs.SelectedTab?.Text ?? "New Tab")} - {PreviewTitle}";
     }

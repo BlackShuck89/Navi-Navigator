@@ -1,14 +1,7 @@
-# Navi Navigator 0.0.3 — Mascot and branding correction
+# Navi Navigator 0.0.4 — Portal visual redesign
 
-This update corrects Navi's presentation against the original teal/white/navy character references and removes lingering generic or old-browser brand cues from the portal.
+This update rebuilds the local Navi Portal to match the richer early-2000s browser concept: a widescreen Navi hero, stronger masthead and original compass mark, expanded sidebar, news/project/download modules, a skin comparison panel, and a branded footer. Modern, Classic, and Fusion each receive distinctive portal treatments.
 
-- Refined mascot SVG: teal face, white cheeks and forelock, navy ear tips, celestial globe-grid detail and Navi compass jacket.
-- Original compass/globe emblem (not the Netscape N) now appears in the local Navi Portal and branded About window.
-- Portal now follows Modern, Classic and Fusion styling with distinct surfaces, colors and border treatments, rather than sharing exactly the same appearance across skins.
-- Branded About window shows Navi, the skin name, preview version and underlying rendering engine.
-- Skins use the canonical teal/navy/ivory palette; all existing tabs, bookmarks and browser data remain in the same profile folder.
-- CI checks shipped logos and manifests for errors and legacy-brand references.
+The page embeds original approved Navi character artwork as `Assets/navi-approved-hero.webp` when present. The application can fall back to its existing SVG if the image is unavailable; a complete preview package needs to include the new WebP alongside the executable. The About page uses the same artwork. There are no old Netscape wordmarks or logos in the new artwork.
 
-**This is a WebView2 (Chromium) Windows prototype, not the Gecko fork.** It is unsigned and has no secure auto-update mechanism. Use for visual testing, not sensitive browsing.
-
-Unzip the Windows x64 release and run `NaviNavigator.exe`; WebView2 Evergreen is required. Test Modern, Classic and Fusion from **View → Skins**.
+Bookmarks and the previous user profile path are preserved. The underlying renderer remains Microsoft WebView2 (Chromium); the Gecko/Firefox fork is not built into this preview. No code signing or update service is included. Avoid sensitive browsing.
