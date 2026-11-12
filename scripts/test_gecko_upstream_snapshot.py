@@ -127,7 +127,10 @@ def main() -> None:
             if file_ref.startswith("(") and file_ref.endswith(")"):
                 source_path = (navi / "content" / file_ref[1:-1]).resolve()
             else:
-                source_path = navi / "content" / file_ref
+                # jar.mn uses the destination path (content/branding/foo)
+                # when no explicit source is present. Its actual source file
+                # is relative to the directory containing jar.mn.
+                source_path = navi / "content" / Path(file_ref).name
             if not source_path.is_file():
                 raise AssertionError(f"Generated branding missing jar asset: {source_path}")
 
