@@ -9,7 +9,7 @@ namespace NaviNavigator;
 
 internal sealed class BrowserForm : Form
 {
-    private const string PreviewTitle = "Navi Navigator — Technical Preview 0.0.4";
+    private const string PreviewTitle = "Navi Navigator — Technical Preview 0.0.5";
     private readonly BrowserSettings _settings = BrowserSettings.Load();
     private readonly SkinCatalog _catalog = new();
     private NaviSkin _skin;
@@ -36,6 +36,11 @@ internal sealed class BrowserForm : Form
     private readonly ToolStripMenuItem _skinsMenu = new("&Skins");
     private readonly Dictionary<TabPage, WebView2> _views = [];
     private readonly HashSet<TabPage> _homePages = [];
+    private readonly HashSet<TabPage> _loadingTabs = [];
+    private readonly List<HistoryVisit> _history = BrowserStateStore.LoadHistory();
+    private readonly Stack<string> _recentlyClosed = new();
+    private readonly System.Windows.Forms.Timer _sessionSaveTimer = new() { Interval = 1400 };
+    private bool _restoringSession;
     private CoreWebView2Environment? _environment;
 
     private WebView2? CurrentView =>
@@ -78,6 +83,17 @@ internal sealed class BrowserForm : Form
         _personalBar.Dock = DockStyle.Top;
         _tabs.Dock = DockStyle.Fill;
 
+        _sessionSaveTimer.Tick += (_, _) =>
+        {
+            _sessionSaveTimer.Stop();
+            PersistSession();
+        };
+        FormClosing += (_, _) =>
+        {
+            _sessionSaveTimer.Stop();
+            PersistSession();
+            PersistHistory();
+        };
         Resize += (_, _) => ResizeAddress();
         _locationBar.SizeChanged += (_, _) => ResizeAddress();
         KeyDown += OnBrowserKeyDown;
@@ -92,6 +108,8 @@ internal sealed class BrowserForm : Form
             async (_, _) => await OpenTabAsync(), Keys.Control | Keys.T));
         file.DropDownItems.Add(new ToolStripMenuItem("Close &Tab", null,
             (_, _) => CloseCurrentTab(), Keys.Control | Keys.W));
+        file.DropDownItems.Add(new ToolStripMenuItem("Reopen Closed &Tab", null,
+            (_, _) => ReopenClosedTab(), Keys.Control | Keys.Shift | Keys.T));
         file.DropDownItems.Add(new ToolStripSeparator());
         file.DropDownItems.Add(new ToolStripMenuItem("E&xit", null, (_, _) => Close()));
 
@@ -145,6 +163,8 @@ internal sealed class BrowserForm : Form
             (_, _) => GoForward(), Keys.Alt | Keys.Right));
         go.DropDownItems.Add(new ToolStripMenuItem("&Home", null,
             (_, _) => NavigateHome()));
+        go.DropDownItems.Add(new ToolStripMenuItem("&History", null,
+            (_, _) => OpenHistory(), Keys.Control | Keys.H));
 
         var tools = new ToolStripMenuItem("&Tools");
         tools.DropDownItems.Add(new ToolStripMenuItem("Open &Downloads Folder", null,
@@ -153,6 +173,19 @@ internal sealed class BrowserForm : Form
             (_, _) => OpenDataFolder()));
         tools.DropDownItems.Add(new ToolStripMenuItem("Open &Skins Folder", null,
             (_, _) => OpenSkinFolder()));
+        tools.DropDownItems.Add(new ToolStripSeparator());
+        tools.DropDownItems.Add(new ToolStripMenuItem("Manage Browsing &History", null,
+            (_, _) => OpenHistory()));
+        var sessionToggle = new ToolStripMenuItem("&Restore Previous Session", null,
+            (_, _) =>
+            {
+                _settings.RestorePreviousSession = !_settings.RestorePreviousSession;
+                TrySave();
+            });
+        sessionToggle.CheckOnClick = false;
+        tools.DropDownItems.Add(sessionToggle);
+        tools.DropDownOpening += (_, _) =>
+            sessionToggle.Checked = _settings.RestorePreviousSession;
 
         var help = new ToolStripMenuItem("&Help");
         help.DropDownItems.Add(new ToolStripMenuItem("&About Navi Navigator", null,
@@ -295,14 +328,23 @@ internal sealed class BrowserForm : Form
         _tabs.ItemSize = new Size(206, 34);
         _tabs.Padding = new Point(10, 3);
         _tabs.DrawItem += DrawTab;
-        _tabs.SelectedIndexChanged += (_, _) => UpdateCurrentUi();
+        _tabs.SelectedIndexChanged += (_, _) =>
+        {
+            UpdateCurrentUi();
+            QueueSessionSave();
+        };
         _tabs.MouseDown += (_, e) =>
         {
             for (int i = 0; i < _tabs.TabPages.Count; i++)
             {
                 var rect = _tabs.GetTabRect(i);
                 if (!rect.Contains(e.Location)) continue;
-                if (e.Button == MouseButtons.Middle ||
+                if (e.Button == MouseButtons.Right)
+                {
+                    _tabs.SelectedIndex = i;
+                    ShowTabContextMenu(_tabs.TabPages[i], e.Location);
+                }
+                else if (e.Button == MouseButtons.Middle ||
                     (e.Button == MouseButtons.Left && e.X > rect.Right - 27))
                 {
                     CloseTab(_tabs.TabPages[i]);
@@ -395,7 +437,25 @@ internal sealed class BrowserForm : Form
             string profile = Path.Combine(BrowserSettings.BaseDirectory, "WebView2");
             Directory.CreateDirectory(profile);
             _environment = await CoreWebView2Environment.CreateAsync(userDataFolder: profile);
-            await OpenTabAsync();
+            var saved = _settings.RestorePreviousSession
+                ? BrowserStateStore.LoadSession() : null;
+            if (saved is { Tabs.Count: > 0 })
+            {
+                _restoringSession = true;
+                try
+                {
+                    foreach (var address in saved.Tabs)
+                        await OpenTabAsync(address);
+                    if (_tabs.TabCount > 0)
+                        _tabs.SelectedIndex = Math.Clamp(saved.SelectedIndex, 0, _tabs.TabCount - 1);
+                }
+                finally { _restoringSession = false; }
+            }
+            else
+            {
+                await OpenTabAsync();
+            }
+            QueueSessionSave();
             _statusText.Text = "Ready — Navi Navigator technical preview";
         }
         catch (Exception ex)
@@ -431,7 +491,8 @@ internal sealed class BrowserForm : Form
             {
                 if (!page.IsDisposed)
                 {
-                    page.Text = TruncateTitle(browser.CoreWebView2.DocumentTitle);
+                    page.Text = _homePages.Contains(page) ? "Navi Portal" :
+                        TruncateTitle(browser.CoreWebView2.DocumentTitle);
                     _tabs.Invalidate();
                     if (_tabs.SelectedTab == page) UpdateCurrentUi();
                 }
@@ -443,15 +504,26 @@ internal sealed class BrowserForm : Form
             browser.CoreWebView2.SourceChanged += (_, _) =>
             {
                 if (_tabs.SelectedTab == page) UpdateCurrentUi();
+                QueueSessionSave();
             };
             browser.CoreWebView2.NavigationStarting += (_, e) =>
             {
                 if (!e.Uri.StartsWith("about:blank", StringComparison.OrdinalIgnoreCase))
                     _homePages.Remove(page);
-                if (_tabs.SelectedTab == page) _statusText.Text = "Connecting…";
+                _loadingTabs.Add(page);
+                if (_tabs.SelectedTab == page)
+                {
+                    _statusText.Text = "Connecting…";
+                    UpdateCurrentUi();
+                }
             };
             browser.CoreWebView2.NavigationCompleted += (_, e) =>
             {
+                _loadingTabs.Remove(page);
+                if (!page.IsDisposed && e.IsSuccess && !_homePages.Contains(page))
+                    RecordHistory(browser.CoreWebView2.Source,
+                        browser.CoreWebView2.DocumentTitle);
+                QueueSessionSave();
                 if (_tabs.SelectedTab == page)
                 {
                     _statusText.Text = e.IsSuccess ? "Done" :
@@ -463,7 +535,8 @@ internal sealed class BrowserForm : Form
             {
                 e.Handled = true;
                 string url = e.Uri;
-                BeginInvoke(new Action(async () => await OpenTabAsync(url)));
+                if (BrowserStateStore.IsWebAddress(url))
+                    BeginInvoke(new Action(async () => await OpenTabAsync(url)));
             };
             browser.CoreWebView2.DownloadStarting += (_, e) =>
             {
@@ -475,6 +548,7 @@ internal sealed class BrowserForm : Form
             else
                 browser.CoreWebView2.Navigate(destination);
             UpdateCurrentUi();
+            QueueSessionSave();
         }
         catch (Exception ex)
         {
@@ -504,6 +578,7 @@ internal sealed class BrowserForm : Form
         page.Text = "Navi Portal";
         view.CoreWebView2.NavigateToString(NaviPortal.BuildHtml(_skin));
         UpdateCurrentUi();
+        QueueSessionSave();
     }
 
     private void NavigateHome()
@@ -562,6 +637,7 @@ internal sealed class BrowserForm : Form
         var current = CurrentView?.CoreWebView2;
         _back.Enabled = current?.CanGoBack == true;
         _forward.Enabled = current?.CanGoForward == true;
+        _stop.Enabled = _tabs.SelectedTab is { } active && _loadingTabs.Contains(active);
         if (current is null)
         {
             _address.Text = "";
@@ -582,13 +658,30 @@ internal sealed class BrowserForm : Form
     private void CloseTab(TabPage page)
     {
         if (!_views.TryGetValue(page, out var browser)) return;
+        string location = GetTabLocation(page);
+        if (location == "navi://home" || BrowserStateStore.IsWebAddress(location))
+        {
+            _recentlyClosed.Push(location);
+            // Keep at most 10 recently closed tabs.
+            if (_recentlyClosed.Count > 10)
+            {
+                var keep = _recentlyClosed.Take(10).ToArray();
+                _recentlyClosed.Clear();
+                for (int i = keep.Length - 1; i >= 0; i--) _recentlyClosed.Push(keep[i]);
+            }
+        }
         _views.Remove(page);
         _homePages.Remove(page);
+        _loadingTabs.Remove(page);
         _tabs.TabPages.Remove(page);
         page.Dispose();
         browser.Dispose();
         if (_tabs.TabPages.Count == 0) Close();
-        else UpdateCurrentUi();
+        else
+        {
+            UpdateCurrentUi();
+            QueueSessionSave();
+        }
     }
 
     private void ResizeAddress()
@@ -832,7 +925,7 @@ internal sealed class BrowserForm : Form
                 {
                     Dock = DockStyle.Fill,
                     TextAlign = ContentAlignment.MiddleCenter,
-                    Text = "Navi Navigator 0.0.3 — Technical Preview\n\n" +
+                    Text = "Navi Navigator 0.0.5 — Technical Preview\n\n" +
                            "About page could not be displayed:\n" + ex.Message
                 });
             }
@@ -847,9 +940,24 @@ internal sealed class BrowserForm : Form
             _address.SelectAll();
             e.Handled = true;
         }
-        else if (e.Control && e.KeyCode == Keys.T)
+        else if (e.Control && e.Shift && e.KeyCode == Keys.T)
+        {
+            ReopenClosedTab();
+            e.Handled = true;
+        }
+        else if (e.Control && !e.Shift && e.KeyCode == Keys.T)
         {
             _ = OpenTabAsync();
+            e.Handled = true;
+        }
+        else if (e.Control && e.KeyCode == Keys.H)
+        {
+            OpenHistory();
+            e.Handled = true;
+        }
+        else if (e.Control && e.KeyCode == Keys.Tab)
+        {
+            SelectAdjacentTab(e.Shift ? -1 : 1);
             e.Handled = true;
         }
         else if (e.Control && e.KeyCode == Keys.W)
@@ -877,6 +985,105 @@ internal sealed class BrowserForm : Form
             GoForward();
             e.Handled = true;
         }
+    }
+
+    private void QueueSessionSave()
+    {
+        if (_restoringSession || _environment is null || IsDisposed) return;
+        _sessionSaveTimer.Stop();
+        _sessionSaveTimer.Start();
+    }
+
+    private string GetTabLocation(TabPage page)
+    {
+        if (_homePages.Contains(page)) return "navi://home";
+        if (_views.TryGetValue(page, out var browser) &&
+            browser.CoreWebView2 is { } web &&
+            BrowserStateStore.IsWebAddress(web.Source))
+            return web.Source;
+        return "navi://home";
+    }
+
+    private void PersistSession()
+    {
+        if (_restoringSession || _environment is null) return;
+        try
+        {
+            var locations = _tabs.TabPages.Cast<TabPage>()
+                .Select(GetTabLocation).ToList();
+            BrowserStateStore.SaveSession(locations, _tabs.SelectedIndex);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            if (!IsDisposed) _statusText.Text = "Could not save tab session: " + ex.Message;
+        }
+    }
+
+    private void PersistHistory()
+    {
+        try { BrowserStateStore.SaveHistory(_history); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            if (!IsDisposed) _statusText.Text = "Could not save history: " + ex.Message;
+        }
+    }
+
+    private void RecordHistory(string? address, string? title)
+    {
+        if (!BrowserStateStore.IsWebAddress(address)) return;
+        string safeTitle = string.IsNullOrWhiteSpace(title) ? address! : title.Trim();
+        _history.Insert(0, new HistoryVisit(
+            safeTitle.Length > 400 ? safeTitle[..400] : safeTitle,
+            address!, DateTimeOffset.UtcNow));
+        if (_history.Count > 2000) _history.RemoveRange(2000, _history.Count - 2000);
+        PersistHistory();
+    }
+
+    private void OpenHistory()
+    {
+        using var window = new HistoryWindow(_history,
+            url => { _ = OpenTabAsync(url); },
+            PersistHistory);
+        window.ShowDialog(this);
+    }
+
+    private void ReopenClosedTab()
+    {
+        if (_recentlyClosed.Count == 0)
+        {
+            _statusText.Text = "No recently closed tabs";
+            return;
+        }
+        _ = OpenTabAsync(_recentlyClosed.Pop());
+    }
+
+    private void SelectAdjacentTab(int direction)
+    {
+        if (_tabs.TabCount == 0) return;
+        _tabs.SelectedIndex = (_tabs.SelectedIndex + direction + _tabs.TabCount) % _tabs.TabCount;
+    }
+
+    private void ShowTabContextMenu(TabPage page, Point screenLocal)
+    {
+        var menu = new ContextMenuStrip();
+        menu.Closed += (_, _) => menu.Dispose();
+        menu.Items.Add("New Tab", null, (_, _) => { _ = OpenTabAsync(); });
+        menu.Items.Add("Duplicate Tab", null, (_, _) =>
+        {
+            string url = GetTabLocation(page);
+            _ = OpenTabAsync(url);
+        });
+        menu.Items.Add("Reopen Closed Tab", null, (_, _) => ReopenClosedTab())
+            .Enabled = _recentlyClosed.Count > 0;
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add("Close Tab", null, (_, _) => CloseTab(page));
+        menu.Items.Add("Close Other Tabs", null, (_, _) =>
+        {
+            foreach (var other in _tabs.TabPages.Cast<TabPage>().ToArray())
+                if (other != page && _tabs.TabPages.Contains(other))
+                    CloseTab(other);
+        }).Enabled = _tabs.TabCount > 1;
+        menu.Show(_tabs, screenLocal);
     }
 
 }

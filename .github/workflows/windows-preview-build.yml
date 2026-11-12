@@ -72,28 +72,41 @@ jobs:
           }
           Write-Host 'Navi skin manifests, compass, and About markup validated.'
 
+      - name: Verify browser state implementation
+        shell: pwsh
+        run: |
+          $state = Get-Content prototype/NaviNavigator/BrowserState.cs -Raw
+          $browser = Get-Content prototype/NaviNavigator/BrowserForm.cs -Raw
+          foreach ($word in @('session.json','history.json','SaveSession','LoadSession','SaveHistory','LoadHistory')) {
+            if ($state -notmatch [regex]::Escape($word)) { throw "State feature missing: $word" }
+          }
+          foreach ($word in @('RestorePreviousSession','ReopenClosedTab','OpenHistory','QueueSessionSave')) {
+            if ($browser -notmatch [regex]::Escape($word)) { throw "Browser UI feature missing: $word" }
+          }
+          Write-Host 'Session, history and recent-tab source checks complete.'
+
       - name: Package portable test build
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item prototype/NaviNavigator/README.md artifacts/publish/README-FIRST.txt
           Compress-Archive -Path artifacts/publish/* `
-            -DestinationPath dist/NaviNavigator-0.0.4-Windows-x64-TechnicalPreview.zip `
+            -DestinationPath dist/NaviNavigator-0.0.5-Windows-x64-TechnicalPreview.zip `
             -CompressionLevel Optimal
-          if (!(Test-Path dist/NaviNavigator-0.0.4-Windows-x64-TechnicalPreview.zip)) {
+          if (!(Test-Path dist/NaviNavigator-0.0.5-Windows-x64-TechnicalPreview.zip)) {
             throw 'Failed to create zip'
           }
 
       - name: Upload downloadable build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NaviNavigator-0.0.4-Windows-x64-TechnicalPreview
-          path: dist/NaviNavigator-0.0.4-Windows-x64-TechnicalPreview.zip
+          name: NaviNavigator-0.0.5-Windows-x64-TechnicalPreview
+          path: dist/NaviNavigator-0.0.5-Windows-x64-TechnicalPreview.zip
           if-no-files-found: error
           retention-days: 30
 
       - name: Publication note
         shell: pwsh
         run: |
-          Write-Host "0.0.4 is an artifact-only build until the approved Navi hero binary has been bundled."
-          Write-Host "Use the fully assembled test ZIP, not the raw Actions artifact, for visual review."
+          Write-Host "The approved hero image must be included in the final tester package."
+          Write-Host "This raw Actions artifact may use the SVG fallback until that image is bundled."

@@ -1,4 +1,4 @@
-NAVI NAVIGATOR 0.0.4 - WINDOWS TECHNICAL PREVIEW
+NAVI NAVIGATOR 0.0.5 - WINDOWS TECHNICAL PREVIEW
 ================================================
 
 This is a test build for Windows 10/11 x64.
@@ -49,7 +49,7 @@ preferences from v0.0.1 should be preserved.
 
 Source: https://github.com/BlackShuck89/Navi-Navigator
 
-BRANDING AND APPEARANCE CHANGES IN 0.0.4
+BRANDING AND APPEARANCE CHANGES IN 0.0.5
 - Navi's teal/white/navy reference-sheet markings reinforced in mascot SVG.
 - Dedicated original compass-and-globe emblem replaces older generic star marks.
 - Portal colors and content now respond to the selected skin.
@@ -58,10 +58,22 @@ BRANDING AND APPEARANCE CHANGES IN 0.0.4
 - No Netscape logos or wordmarks are included in branded application assets.
 
 
-NAVI PORTAL v0.0.4
+NAVI PORTAL v0.0.5
 - Large split-layout portal hero featuring the approved Navi illustration.
 - Expanded Navi Services sidebar, portal link modules, skins preview, and lower information panels.
 - Distinct portal styles for Modern, Classic and Fusion; responsive narrower layout.
 - The browser looks for Assets/navi-approved-hero.webp, using a legacy vector fallback if absent.
 - The full preview ZIP must contain the approved hero art at that exact relative path.
 - All browser navigation features and existing user profiles remain unchanged.
+
+BROWSER FUNCTIONALITY IN 0.0.5
+- Restore tabs and selected tab on restart (enabled by default).
+- Tools > Restore Previous Session toggles this behavior.
+- Browser session checkpoints periodically, and on normal shutdown.
+- Go > History (Ctrl+H) opens searchable browsing history.
+- History manager supports open in new tab, delete selected, and clear all.
+- Recently closed tabs can be reopened with Ctrl+Shift+T.
+- Right-click a tab to duplicate it, close it, or close other tabs.
+- Ctrl+Tab and Ctrl+Shift+Tab switch between tabs.
+- History is saved locally; only successful HTTP/HTTPS URLs are recorded.
+- No changes were made to the approved Navi Portal artwork.

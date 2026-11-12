@@ -11,6 +11,7 @@ internal sealed class BrowserSettings
     public bool? ShowToolbarLabels { get; set; }
     public bool ShowPersonalBar { get; set; } = true;
     public bool ShowStatusBar { get; set; } = true;
+    public bool RestorePreviousSession { get; set; } = true;
     public List<Bookmark> Bookmarks { get; set; } = [];
 
     internal static string BaseDirectory => Path.Combine(
